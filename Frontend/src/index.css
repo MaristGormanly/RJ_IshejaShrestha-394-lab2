@@ -2,32 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap');
+
 @layer base {
   body {
-    @apply font-sans text-gray-800;
+    @apply font-sans text-gray-800 bg-offwhite;
   }
   h1 {
-    @apply text-3xl font-bold;
+    @apply text-3xl font-bold font-serif text-navy;
   }
   h2 {
-    @apply text-2xl font-bold;
+    @apply text-2xl font-bold font-serif text-navy;
   }
   h3 {
-    @apply text-xl font-semibold;
+    @apply text-xl font-semibold font-serif text-navy;
+  }
+  a {
+    @apply transition-colors duration-200;
   }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded font-medium transition-colors duration-200;
+    @apply px-6 py-2.5 rounded-md font-medium transition-all duration-200 shadow-soft;
   }
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-dark;
+    @apply bg-navy text-offwhite hover:bg-navy-light;
   }
   .btn-secondary {
-    @apply bg-secondary text-gray-700 hover:bg-secondary-dark;
+    @apply bg-offwhite border border-gold text-navy hover:bg-gold-light hover:border-gold-dark;
+  }
+  .btn-accent {
+    @apply bg-gold text-navy hover:bg-gold-dark;
+  }
+  .card {
+    @apply bg-white rounded-lg shadow-soft border-thin border-gray-100 transition-shadow duration-300 hover:shadow-elevated;
   }
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply w-full px-4 py-3 bg-offwhite border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-navy focus:border-navy;
+  }
+  .section-title {
+    @apply font-serif text-2xl font-bold text-navy relative inline-block;
+  }
+  .section-title::after {
+    @apply content-[''] absolute bottom-0 left-0 w-1/2 h-0.5 bg-gold;
+  }
+  .elegant-link {
+    @apply text-navy hover:text-gold-dark border-b border-transparent hover:border-gold-dark transition-all duration-200;
   }
 } 

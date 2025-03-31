@@ -28,11 +28,18 @@ function App() {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-offwhite">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-navy border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-navy font-serif">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-offwhite text-gray-800">
       <Navbar user={user} />
       <div className="container mx-auto px-4 py-8">
         <Routes>
