@@ -7,14 +7,20 @@ import Button from './Button';
 const Navbar = ({ user }) => {
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
       navigate('/login');
+      setMobileMenuOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
   };
 
   return (
@@ -24,7 +30,7 @@ const Navbar = ({ user }) => {
           <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center">
               <h1 className="text-2xl font-serif font-bold text-navy">
-                Cover<span className="text-gold">Craft</span>
+                Landed
               </h1>
             </Link>
             
@@ -42,49 +48,118 @@ const Navbar = ({ user }) => {
             
             {user && (
               <div className="hidden md:flex space-x-6">
-                <Link to="/cover-letter" className="elegant-link">
-                  Create
-                </Link>
                 <Link to="/templates" className="elegant-link">
                   Templates
                 </Link>
-                <Link to="/dashboard" className="elegant-link">
-                  Dashboard
+                <Link to="/jobs" className="elegant-link">
+                  Jobs
+                </Link>
+                <Link to="/profile" className="elegant-link">
+                  Profile
                 </Link>
               </div>
             )}
           </div>
           
           <div className="flex items-center space-x-4">
-            {user ? (
-              <>
-                <Button color="secondary" size="sm" onClick={() => {}}>
-                  Save
-                </Button>
-                <Button color="primary" size="sm" onClick={() => {}}>
-                  Upgrade
-                </Button>
+            {/* Desktop menu */}
+            <div className="hidden md:block">
+              {user ? (
                 <button
                   onClick={handleLogout}
-                  className="elegant-link ml-2"
+                  className="elegant-link"
+                >
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link to="/login" className="elegant-link mr-4">
+                    Log in
+                  </Link>
+                  <Link to="/register">
+                    <Button color="primary" size="sm">
+                      Sign up
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+            
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden flex items-center text-navy"
+              onClick={toggleMobileMenu}
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-6 w-6" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        {/* Mobile menu, show/hide based on menu state */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-gray-100">
+            {user ? (
+              <>
+                <Link 
+                  to="/templates" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Templates
+                </Link>
+                <Link 
+                  to="/jobs" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Jobs
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left py-2 px-4 text-navy hover:bg-offwhite"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="elegant-link">
+                <Link 
+                  to="/login" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Log in
                 </Link>
-                <Link to="/register">
-                  <Button color="primary" size="sm">
-                    Sign up
-                  </Button>
+                <Link 
+                  to="/register" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign up
                 </Link>
               </>
             )}
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );
