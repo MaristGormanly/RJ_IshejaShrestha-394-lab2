@@ -9,6 +9,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CoverLetterGenerator from './pages/CoverLetterGenerator';
 import ResumeTailoring from './pages/ResumeTailoring';
+import Templates from './pages/Templates';
+import Jobs from './pages/Jobs';
+import Profile from './pages/Profile';
 
 // Components
 import Navbar from './components/Navbar';
@@ -48,6 +51,9 @@ function App() {
           <Route path="/" element={<AuthRoute user={user}><Dashboard /></AuthRoute>} />
           <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
           <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
+          <Route path="/templates" element={<AuthRoute user={user}><Templates /></AuthRoute>} />
+          <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
+          <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
         </Routes>
       </div>
     </div>
