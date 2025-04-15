@@ -33,14 +33,19 @@ const AICoverLetterGenerator = () => {
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
         const userDoc = await getDoc(userDocRef);
         
+        // Fetch structured resume data
+        const resumeDataRef = doc(db, 'resumeData', auth.currentUser.uid);
+        const resumeDataDoc = await getDoc(resumeDataRef);
+        const resumeData = resumeDataDoc.exists() ? resumeDataDoc.data() : {};
+        
         if (userDoc.exists()) {
           const userData = userDoc.data();
           
           // Format profile data for the AI service
           const formattedProfile = {
             personal: {
-              firstName: userData.firstName || '',
-              lastName: userData.lastName || '',
+              firstName: userData.firstName || userData.applicationProfile?.firstName || '',
+              lastName: userData.lastName || userData.applicationProfile?.lastName || '',
               email: userData.email || auth.currentUser.email || '',
               phone: userData.phone || '',
               location: userData.location || '',
@@ -48,7 +53,12 @@ const AICoverLetterGenerator = () => {
             },
             education: userData.applicationProfile?.education || [],
             experience: userData.applicationProfile?.experience || [],
-            skills: userData.skills || [],
+            skills: resumeData.skills ? resumeData.skills.split(',').map(skill => skill.trim()) : [],
+            summary: resumeData.summary || '',
+            certifications: resumeData.certifications ? resumeData.certifications.split('\n').map(cert => cert.trim()).filter(Boolean) : [],
+            achievements: resumeData.achievements ? resumeData.achievements.split('\n').map(achievement => achievement.trim()).filter(Boolean) : [],
+            languages: resumeData.languages ? resumeData.languages.split(',').map(lang => lang.trim()) : [],
+            projects: resumeData.projects ? resumeData.projects.split('\n\n').map(project => project.trim()).filter(Boolean) : [],
           };
           
           setProfileData(formattedProfile);

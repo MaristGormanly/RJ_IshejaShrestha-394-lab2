@@ -41,6 +41,132 @@ const AIResumeGenerator = () => {
   // Add state for document handling
   const [documentToLoad, setDocumentToLoad] = useState(null);
 
+  // When generatedResume is updated, also create a formatted version for display
+  useEffect(() => {
+    if (generatedResume) {
+      // Process the generated resume text to apply formatting
+      parseResumeForDisplay(generatedResume);
+    }
+  }, [generatedResume]);
+
+  // State to hold the formatted resume HTML
+  const [formattedResumeHtml, setFormattedResumeHtml] = useState('');
+
+  // Parse the raw resume text and convert to formatted HTML
+  const parseResumeForDisplay = (rawText) => {
+    // Filter out any AI commentary at the end
+    const lines = removeAICommentary(rawText.split('\n'));
+    
+    let html = '<div class="resume-preview bg-white">';
+    
+    // Track the current section we're in
+    let currentSection = '';
+    let inList = false;
+    
+    // Process each line
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Skip empty lines
+      if (line === '') {
+        if (inList) {
+          html += '</ul>';
+          inList = false;
+        }
+        continue;
+      }
+      
+      // Check if this is a horizontal divider
+      if (line.startsWith('---')) {
+        html += '<hr class="my-3 border-gray-300" />';
+        continue;
+      }
+      
+      // Check if this is the name (first line)
+      if (i === 0) {
+        html += `<h1 class="text-center text-2xl font-bold text-gray-800 mb-2">${line}</h1>`;
+        continue;
+      }
+      
+      // Check for contact info (typically lines 2-4)
+      if (i > 0 && i < 5 && (line.includes('@') || line.includes('Phone') || line.includes('NY') || line.includes('Address'))) {
+        html += `<p class="text-center text-gray-600 mb-1">${line}</p>`;
+        continue;
+      }
+      
+      // Check for section headers (### or ALL CAPS with colon)
+      if (line.startsWith('###') || (line.toUpperCase() === line && line.length > 0 && line.endsWith(':'))) {
+        if (inList) {
+          html += '</ul>';
+          inList = false;
+        }
+        
+        // Extract section name
+        currentSection = line.replace('###', '').replace(':', '').trim();
+        
+        html += `<div class="mt-4 mb-2">
+          <h2 class="text-lg font-bold text-gray-800 border-b border-gray-300 pb-1">${currentSection}</h2>
+        </div>`;
+        continue;
+      }
+      
+      // Check for subsection headers (usually bold text)
+      if (line.startsWith('**') && line.endsWith('**')) {
+        const boldText = line.replace(/\*\*/g, '');
+        html += `<h3 class="font-bold text-gray-700 mt-3 mb-1">${boldText}</h3>`;
+        continue;
+      }
+      
+      // Check for location/date lines that often follow subsection headers
+      if (i > 0 && lines[i-1].startsWith('**') && (line.includes(',') || line.includes('-'))) {
+        html += `<p class="text-sm text-gray-600 italic mb-2">${line}</p>`;
+        continue;
+      }
+      
+      // Check for bullet points
+      if (line.startsWith('-') || line.startsWith('•')) {
+        if (!inList) {
+          html += '<ul class="list-disc pl-5 my-2">';
+          inList = true;
+        }
+        
+        const bulletText = line.substring(1).trim();
+        html += `<li class="mb-1 text-gray-700">${bulletText}</li>`;
+        continue;
+      }
+      
+      // Regular paragraph text
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      
+      html += `<p class="mb-2 text-gray-700">${line}</p>`;
+    }
+    
+    // Close any open lists
+    if (inList) {
+      html += '</ul>';
+    }
+    
+    html += '</div>';
+    
+    setFormattedResumeHtml(html);
+  };
+
+  // Render the formatted resume content in the preview
+  const renderFormattedResume = () => {
+    if (formattedResumeHtml) {
+      return <div dangerouslySetInnerHTML={{ __html: formattedResumeHtml }} className="p-6 print:p-0 max-w-3xl mx-auto" />;
+    }
+    
+    return (
+      <div className="text-center p-8">
+        <p className="text-gray-500">Resume preview not available</p>
+      </div>
+    );
+  };
+
   // Load user profile data and saved resumes when component mounts
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -54,14 +180,19 @@ const AIResumeGenerator = () => {
         const userDocRef = doc(db, 'users', auth.currentUser.uid);
         const userDoc = await getDoc(userDocRef);
         
+        // Fetch structured resume data
+        const resumeDataRef = doc(db, 'resumeData', auth.currentUser.uid);
+        const resumeDataDoc = await getDoc(resumeDataRef);
+        const resumeData = resumeDataDoc.exists() ? resumeDataDoc.data() : {};
+        
         if (userDoc.exists()) {
           const userData = userDoc.data();
           
           // Format profile data for the AI service
           const formattedProfile = {
             personal: {
-              firstName: userData.firstName || '',
-              lastName: userData.lastName || '',
+              firstName: userData.firstName || userData.applicationProfile?.firstName || '',
+              lastName: userData.lastName || userData.applicationProfile?.lastName || '',
               email: userData.email || auth.currentUser.email || '',
               phone: userData.phone || '',
               location: userData.location || '',
@@ -69,8 +200,12 @@ const AIResumeGenerator = () => {
             },
             education: userData.applicationProfile?.education || [],
             experience: userData.applicationProfile?.experience || [],
-            skills: userData.skills || [],
-            achievements: userData.achievements || [],
+            skills: resumeData.skills ? resumeData.skills.split(',').map(skill => skill.trim()) : [],
+            summary: resumeData.summary || '',
+            certifications: resumeData.certifications ? resumeData.certifications.split('\n').map(cert => cert.trim()).filter(Boolean) : [],
+            achievements: resumeData.achievements ? resumeData.achievements.split('\n').map(achievement => achievement.trim()).filter(Boolean) : [],
+            languages: resumeData.languages ? resumeData.languages.split(',').map(lang => lang.trim()) : [],
+            projects: resumeData.projects ? resumeData.projects.split('\n\n').map(project => project.trim()).filter(Boolean) : [],
           };
           
           setProfileData(formattedProfile);
@@ -853,22 +988,417 @@ const AIResumeGenerator = () => {
   const handleDownloadResume = () => {
     if (!generatedResume) return;
     
-    // Create a Blob and generate a download link directly in the browser
-    const element = document.createElement('a');
-    const file = new Blob([generatedResume], { type: 'text/plain' });
+    // Create a Blob and download as text file
+    const element = document.createElement("a");
+    const file = new Blob([generatedResume], { type: "text/plain" });
     element.href = URL.createObjectURL(file);
-    element.download = `AI_Resume_${new Date().toISOString().split('T')[0]}.txt`;
+    element.download = `AI_Resume_${new Date().toISOString().split("T")[0]}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
   };
+  
+  // New function to download as Word document
+  const handleDownloadWord = async () => {
+    if (!generatedResume) return;
+    
+    try {
+      setLoading(true);
+      
+      // Import libraries dynamically to reduce initial load time
+      const docx = await import('docx');
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel } = docx;
+      
+      // Parse the resume content
+      const lines = generatedResume.split('\n');
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: parseResumeToDocx(lines, docx)
+          }
+        ]
+      });
+      
+      // Create and download the docx file
+      const blob = await Packer.toBlob(doc);
+      const element = document.createElement("a");
+      element.href = URL.createObjectURL(blob);
+      element.download = `AI_Resume_${new Date().toISOString().split("T")[0]}.docx`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      setError('Failed to generate Word document. Please try downloading as text instead.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Helper function to parse resume text into docx format
+  const parseResumeToDocx = (lines, docx) => {
+    const { Paragraph, TextRun, HeadingLevel } = docx;
+    const children = [];
+    
+    let inBulletSection = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Skip empty lines
+      if (line === '') {
+        children.push(new Paragraph({}));
+        continue;
+      }
+      
+      // Detect headers (all caps or ending with a colon)
+      if (line.toUpperCase() === line && line.length > 0) {
+        // Add header
+        children.push(
+          new Paragraph({
+            text: line,
+            heading: HeadingLevel.HEADING_2,
+            thematicBreak: true, // Add a horizontal line under headers
+            spacing: {
+              before: 240,
+              after: 120
+            }
+          })
+        );
+        inBulletSection = false;
+      }
+      // Check if this is a bullet point
+      else if (line.startsWith('•') || line.startsWith('-')) {
+        children.push(
+          new Paragraph({
+            text: line.substring(1).trim(),
+            bullet: {
+              level: 0
+            },
+            spacing: {
+              before: 60,
+              after: 60
+            }
+          })
+        );
+        inBulletSection = true;
+      }
+      // Regular text
+      else {
+        const paragraph = new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              bold: i < 4, // Make the first few lines (usually name and contact) bold
+            })
+          ],
+          spacing: {
+            before: 60,
+            after: 60
+          }
+        });
+        children.push(paragraph);
+        inBulletSection = false;
+      }
+    }
+    
+    return children;
+  };
+  
+  // New function to download as PDF
+  const handleDownloadPDF = async () => {
+    if (!generatedResume) return;
+    
+    try {
+      setLoading(true);
+      
+      // Import libraries dynamically
+      const jsPDF = (await import('jspdf')).default;
+      
+      // Create new PDF document - using A4 size
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      // Set fonts
+      doc.setFont("helvetica", "normal");
+      
+      // Define constants for formatting
+      const margin = 20; // margin in mm
+      const pageWidth = 210; // A4 width
+      const contentWidth = pageWidth - (margin * 2);
+      
+      // Process the resume content
+      const lines = generatedResume.split('\n');
+      
+      // Set initial y position
+      let y = margin;
+      
+      // Filter out any AI commentary at the end
+      const filteredLines = removeAICommentary(lines);
+      
+      // Track if we're in a section
+      let currentSection = '';
+      
+      // Process each line
+      for (let i = 0; i < filteredLines.length; i++) {
+        const line = filteredLines[i].trim();
+        
+        // Skip empty lines
+        if (line === '') {
+          y += 2;
+          continue;
+        }
+        
+        // Check if this is a name (first line)
+        if (i === 0) {
+          doc.setFontSize(16);
+          doc.setFont("helvetica", "bold");
+          doc.text(line, pageWidth / 2, y, { align: 'center' });
+          y += 8;
+          continue;
+        }
+        
+        // Check for contact info section (typically lines 2-4)
+        if (i > 0 && i < 5 && (line.includes('@') || line.includes('Phone') || line.includes('NY') || line.includes('New York'))) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(line, pageWidth / 2, y, { align: 'center' });
+          y += 5;
+          continue;
+        }
+        
+        // Check for section dividers (lines with multiple dashes)
+        if (line.startsWith('---')) {
+          doc.setDrawColor(0);
+          doc.setLineWidth(0.5);
+          doc.line(margin, y, pageWidth - margin, y);
+          y += 5;
+          continue;
+        }
+        
+        // Check for section headers (lines starting with ###)
+        if (line.startsWith('###') || (line.toUpperCase() === line && line.length > 0 && line.endsWith(':'))) {
+          // Extract section name
+          currentSection = line.replace('###', '').replace(':', '').trim();
+          
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          
+          // Add some space before sections (except the first one)
+          if (i > 5) y += 3;
+          
+          if (line.startsWith('###')) {
+            doc.text(line.replace('###', '').trim(), margin, y);
+          } else {
+            doc.text(line, margin, y);
+          }
+          
+          y += 5;
+          
+          // Add a light horizontal line under each section header
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.2);
+          doc.line(margin, y, pageWidth - margin, y);
+          
+          y += 5;
+          continue;
+        }
+        
+        // Check for subsection headers (usually bold text or followed by location/date)
+        if (line.startsWith('**') && line.endsWith('**')) {
+          doc.setFontSize(11);
+          doc.setFont("helvetica", "bold");
+          doc.text(line.replace(/\*\*/g, ''), margin, y);
+          y += 5;
+          continue;
+        }
+        
+        // Check for bullet points
+        if (line.startsWith('-') || line.startsWith('•')) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          
+          // Handle text wrapping for bullet points
+          const bulletText = line.substring(1).trim();
+          const textX = margin + 5; // indent bullet points
+          
+          doc.text('•', margin, y);
+          
+          // Calculate available width for text after bullet
+          const availableWidth = contentWidth - 5;
+          
+          // Get array of lines after wrapping text
+          const wrappedText = doc.splitTextToSize(bulletText, availableWidth);
+          
+          // Print each line
+          for (let j = 0; j < wrappedText.length; j++) {
+            doc.text(wrappedText[j], textX, y);
+            y += 5;
+            
+            // Check if we need a new page
+            if (y > 280) {
+              doc.addPage();
+              y = margin;
+            }
+          }
+          
+          continue;
+        }
+        
+        // Regular text - handle with proper text wrapping
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        // Wrap text to fit within margins
+        const wrappedText = doc.splitTextToSize(line, contentWidth);
+        
+        // Print each line
+        for (let j = 0; j < wrappedText.length; j++) {
+          doc.text(wrappedText[j], margin, y);
+          y += 5;
+          
+          // Check if we need a new page
+          if (y > 280) {
+            doc.addPage();
+            y = margin;
+          }
+        }
+      }
+      
+      // Save the PDF
+      doc.save(`AI_Resume_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setError('Failed to generate PDF. Please try downloading as text instead.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Add button to refresh the resume list
+  // Helper function to remove AI commentary at the end of the resume
+  const removeAICommentary = (lines) => {
+    // Look for typical AI commentary markers
+    const commentaryMarkers = [
+      "This resume is designed to",
+      "Feel free to",
+      "I've tailored this resume",
+      "This format highlights",
+      "I've focused on"
+    ];
+    
+    // Find the index where commentary starts
+    let commentaryIndex = lines.length;
+    
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (commentaryMarkers.some(marker => line.includes(marker))) {
+        commentaryIndex = i;
+        // Check if there's an empty line before the commentary
+        if (i > 0 && lines[i-1].trim() === '') {
+          commentaryIndex = i - 1;
+        }
+        break;
+      }
+    }
+    
+    // Return only the lines before the commentary
+    return lines.slice(0, commentaryIndex);
+  };
+
+  // Handle printing the resume
+  const handlePrintResume = () => {
+    // Open a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    // Add necessary styles for printing
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Resume - ${profileData?.personal?.firstName || ''} ${profileData?.personal?.lastName || ''}</title>
+          <style>
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              color: #333;
+              line-height: 1.5;
+              padding: 20px;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            h1 {
+              text-align: center;
+              font-size: 24px;
+              margin-bottom: 8px;
+            }
+            .contact-info {
+              text-align: center;
+              font-size: 14px;
+              margin-bottom: 20px;
+              color: #555;
+            }
+            h2 {
+              font-size: 16px;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 5px;
+              margin-top: 20px;
+              margin-bottom: 10px;
+            }
+            h3 {
+              font-size: 15px;
+              margin-bottom: 5px;
+              margin-top: 15px;
+            }
+            ul {
+              margin-top: 5px;
+              margin-bottom: 15px;
+              padding-left: 25px;
+            }
+            li {
+              margin-bottom: 5px;
+            }
+            p {
+              margin: 5px 0;
+            }
+            hr {
+              border: none;
+              border-top: 1px solid #eee;
+              margin: 15px 0;
+            }
+            @media print {
+              body {
+                padding: 0;
+                font-size: 12px;
+              }
+              h1 {
+                font-size: 18px;
+              }
+              h2 {
+                font-size: 14px;
+              }
+              h3 {
+                font-size: 13px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${formattedResumeHtml}
+        </body>
+      </html>
+    `);
+    
+    // Wait for content to load, then print
+    printWindow.document.close();
+    printWindow.onload = function() {
+      printWindow.focus();
+      printWindow.print();
+    };
+  };
+
   const handleRefreshResumes = () => {
-    console.log("Refreshing saved resumes list");
-    // Clear current resumes to show loading state
-    setSavedResumes([]);
-    // Fetch resumes again
     fetchSavedResumes();
   };
 
@@ -1360,7 +1890,7 @@ const AIResumeGenerator = () => {
       {/* Resume Preview Modal */}
       {showResumePreview && generatedResume && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">AI Generated Resume</h2>
@@ -1372,48 +1902,34 @@ const AIResumeGenerator = () => {
                 </button>
               </div>
               
-              <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded-md">
-                <p className="text-sm text-blue-800">
-                  <strong>Resume Details:</strong> This AI-generated resume is tailored specifically for 
-                  <strong> {profileData?.personal?.firstName} {profileData?.personal?.lastName}</strong> 
-                  {options.tone && <span>, using a <strong>{options.tone}</strong> tone</span>}
-                  {options.format && <span>, in a <strong>{options.format}</strong> format</span>}
-                  {options.focus && <span>, with focus on <strong>{options.focus}</strong></span>}
-                  {selectedResumeContent && <span>, enhanced with content from your <strong>existing resume</strong></span>}
-                  , optimized for the job description you provided.
-                </p>
+              <div className="overflow-auto">
+                {renderFormattedResume()}
               </div>
               
-              <div className="bg-white border border-gray-300 p-6 rounded shadow-sm whitespace-pre-wrap">
-                <div className="resume-view">
-                  {/* Auto-format the resume text by parsing it */}
-                  {generatedResume.split('\n').map((line, index) => {
-                    // Check if it's a header (all caps or ends with a colon)
-                    if (line.toUpperCase() === line && line.trim().length > 0 && line.match(/[A-Za-z]/)) {
-                      return <h3 key={index} className="text-lg font-bold text-gray-800 mt-4 mb-2 border-b border-gray-300 pb-1">{line}</h3>;
-                    } 
-                    // Check if it might be a subheader
-                    else if (line.endsWith(':')) {
-                      return <h4 key={index} className="font-bold text-gray-700 mt-3 mb-1">{line}</h4>;
-                    }
-                    // Check if it's a bullet point
-                    else if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')) {
-                      return <p key={index} className="ml-4 mb-1">{line}</p>;
-                    } 
-                    // Regular text
-                    else {
-                      return <p key={index} className={line.trim() === '' ? 'mb-3' : 'mb-1'}>{line}</p>;
-                    }
-                  })}
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end space-x-3">
+              <div className="mt-6 flex flex-wrap justify-end gap-2">
                 <button
                   className="btn btn-secondary"
                   onClick={handleDownloadResume}
                 >
                   Download as Text
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleDownloadWord}
+                >
+                  Download as Word
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleDownloadPDF}
+                >
+                  Download as PDF
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handlePrintResume}
+                >
+                  Print Resume
                 </button>
                 <button
                   className="btn btn-primary"

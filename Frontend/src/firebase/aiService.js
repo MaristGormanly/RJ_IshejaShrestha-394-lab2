@@ -59,7 +59,11 @@ export const generateResume = async (userId, profileData, jobDescription, option
       education = [], 
       experience = [], 
       skills = [], 
-      achievements = [] 
+      achievements = [],
+      summary = '',
+      certifications = [],
+      languages = [],
+      projects = []
     } = profileData;
     
     // Build the prompt for OpenAI
@@ -72,9 +76,14 @@ export const generateResume = async (userId, profileData, jobDescription, option
     prompt += `Location: ${personal.location}\n`;
     prompt += `Profession: ${personal.profession}\n\n`;
     
+    if (summary) {
+      prompt += `PROFESSIONAL SUMMARY:\n${summary}\n\n`;
+    }
+    
     prompt += `EDUCATION:\n`;
     education.forEach(edu => {
       prompt += `- ${edu.degree} in ${edu.fieldOfStudy} from ${edu.institution} (${edu.startDate} - ${edu.endDate || 'Present'})\n`;
+      if (edu.gpa) prompt += `  GPA: ${edu.gpa}\n`;
     });
     prompt += `\n`;
     
@@ -87,19 +96,65 @@ export const generateResume = async (userId, profileData, jobDescription, option
     
     prompt += `SKILLS:\n${skills.join(', ')}\n\n`;
     
-    prompt += `ACHIEVEMENTS:\n`;
-    achievements.forEach(achievement => {
-      prompt += `- ${achievement}\n`;
-    });
-    prompt += `\n`;
+    if (certifications.length > 0) {
+      prompt += `CERTIFICATIONS:\n`;
+      certifications.forEach(cert => {
+        prompt += `- ${cert}\n`;
+      });
+      prompt += `\n`;
+    }
+    
+    if (achievements.length > 0) {
+      prompt += `ACHIEVEMENTS:\n`;
+      achievements.forEach(achievement => {
+        prompt += `- ${achievement}\n`;
+      });
+      prompt += `\n`;
+    }
+    
+    if (languages.length > 0) {
+      prompt += `LANGUAGES:\n${languages.join(', ')}\n\n`;
+    }
+    
+    if (projects.length > 0) {
+      prompt += `PROJECTS:\n`;
+      projects.forEach(project => {
+        prompt += `- ${project}\n`;
+      });
+      prompt += `\n`;
+    }
     
     prompt += `Please generate a professional resume with the following specifications:\n`;
+    prompt += `- Use a clean, industry-standard resume format similar to traditional ATS-friendly resumes\n`;
+    prompt += `- Format the resume with clear section headers (e.g., EDUCATION, EXPERIENCE, SKILLS, etc.)\n`;
+    prompt += `- Use bullet points for achievements and responsibilities\n`;
+    prompt += `- Include the person's name at the top, followed by contact information (email, phone, location)\n`;
+    prompt += `- Under each work experience, include 3-5 bullet points that quantify achievements when possible\n`;
+    prompt += `- Format dates consistently (Month Year format is preferred)\n`;
+    prompt += `- Organize skills into relevant categories if there are many\n`;
     prompt += `- Tone: ${tone}\n`;
-    prompt += `- Format: ${format}\n`;
     prompt += `- Focus on: ${focus}\n`;
     prompt += `- Tailor the content to highlight relevant skills and experience for the job description\n`;
-    prompt += `- Organize in a clear, professional format\n`;
-    prompt += `- Quantify achievements where possible\n`;
+    prompt += `- Use strong action verbs to begin bullet points\n`;
+    prompt += `- Be specific and concise in descriptions\n`;
+    prompt += `- Quantify achievements with numbers where possible (%, $, time saved, etc.)\n`;
+    prompt += `- Ensure all bullet points are relevant to the target job\n`;
+    prompt += `- Make the candidate look like an excellent match for the job description\n`;
+    prompt += `- Order sections in the most appropriate way for this specific job\n`;
+    prompt += `- Keep the entire resume to one page if possible, or two pages maximum\n`;
+    prompt += `- Format the resume so it could be directly copied into a text editor and maintain clean formatting\n`;
+    prompt += `- Use spacing and formatting that would translate well to a Word document or PDF\n`;
+    prompt += `- Use Markdown formatting for section headers (e.g., ### EXPERIENCE)\n`;
+    prompt += `- Use --- to create section dividers where appropriate\n\n`;
+    
+    prompt += `IMPORTANT FORMATTING INSTRUCTIONS:\n`;
+    prompt += `- DO NOT include any commentary, notes, or explanations at the end of the resume\n`;
+    prompt += `- DO NOT include phrases like "This resume is designed to..." or "Feel free to..."\n`;
+    prompt += `- The output should ONLY be the resume itself, with no additional text or comments\n`;
+    prompt += `- The resume is a finished product, not a draft or suggestion\n`;
+    
+    // Adding job description analysis request
+    prompt += `IMPORTANT: Analyze the job description first, identify key requirements, skills, and qualifications, and ensure the resume highlights matching skills and experiences in a way that makes the candidate look well-qualified for the role.\n`;
     
     // Call OpenAI API
     const resumeContent = await callOpenAI(prompt, 'gpt-4', 2000);
@@ -161,7 +216,11 @@ export const generateCoverLetter = async (userId, profileData, jobDescription, o
     const { 
       personal = {}, 
       experience = [], 
-      skills = [], 
+      skills = [],
+      summary = '',
+      achievements = [],
+      certifications = [],
+      projects = []
     } = profileData;
     
     // Build the prompt for OpenAI
@@ -175,6 +234,10 @@ export const generateCoverLetter = async (userId, profileData, jobDescription, o
     prompt += `Location: ${personal.location}\n`;
     prompt += `Profession: ${personal.profession}\n\n`;
     
+    if (summary) {
+      prompt += `PROFESSIONAL SUMMARY:\n${summary}\n\n`;
+    }
+    
     prompt += `RELEVANT EXPERIENCE:\n`;
     experience.slice(0, 3).forEach(exp => {
       prompt += `- ${exp.position} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'})\n`;
@@ -183,6 +246,30 @@ export const generateCoverLetter = async (userId, profileData, jobDescription, o
     prompt += `\n`;
     
     prompt += `KEY SKILLS:\n${skills.join(', ')}\n\n`;
+    
+    if (achievements.length > 0) {
+      prompt += `KEY ACHIEVEMENTS:\n`;
+      achievements.slice(0, 3).forEach(achievement => {
+        prompt += `- ${achievement}\n`;
+      });
+      prompt += `\n`;
+    }
+    
+    if (certifications.length > 0) {
+      prompt += `RELEVANT CERTIFICATIONS:\n`;
+      certifications.slice(0, 3).forEach(cert => {
+        prompt += `- ${cert}\n`;
+      });
+      prompt += `\n`;
+    }
+    
+    if (projects.length > 0) {
+      prompt += `NOTABLE PROJECTS:\n`;
+      projects.slice(0, 2).forEach(project => {
+        prompt += `- ${project}\n`;
+      });
+      prompt += `\n`;
+    }
     
     if (keyPoints.length > 0) {
       prompt += `KEY POINTS TO EMPHASIZE:\n`;

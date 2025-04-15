@@ -30,6 +30,14 @@ const Profile = () => {
     type: 'resume',
     description: ''
   });
+  const [resumeData, setResumeData] = useState({
+    skills: '',
+    summary: '',
+    certifications: '',
+    achievements: '',
+    languages: '',
+    projects: ''
+  });
   const [applicationProfile, setApplicationProfile] = useState({
     // Personal Information
     firstName: '',
@@ -92,6 +100,11 @@ const Profile = () => {
             if (userData.applicationProfile) {
               setApplicationProfile(userData.applicationProfile);
             }
+            
+            // Load resume data if it exists
+            if (userData.resumeData) {
+              setResumeData(userData.resumeData);
+            }
           } else {
             // Create an empty user document for new users
             const newUserData = {
@@ -123,6 +136,9 @@ const Profile = () => {
           
           // Fetch saved documents
           fetchSavedDocuments();
+
+          // Fetch structured resume data
+          fetchResumeData();
         } catch (error) {
           console.error('Error fetching user data:', error);
         } finally {
@@ -156,9 +172,29 @@ const Profile = () => {
     }
   };
 
+  const fetchResumeData = async () => {
+    if (!user) return;
+    
+    try {
+      const resumeDataRef = doc(db, 'resumeData', user.uid);
+      const resumeDataDoc = await getDoc(resumeDataRef);
+      
+      if (resumeDataDoc.exists()) {
+        setResumeData(resumeDataDoc.data());
+      }
+    } catch (error) {
+      console.error('Error fetching resume data:', error);
+    }
+  };
+
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleResumeDataChange = (e) => {
+    const { name, value } = e.target;
+    setResumeData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleProfileUpdate = async (e) => {
@@ -603,60 +639,82 @@ const Profile = () => {
     }
   };
 
+  // Add function to save resume data
+  const handleResumeDataUpdate = async (e) => {
+    e.preventDefault();
+    
+    if (!user) return;
+    setUpdating(true);
+    setUpdateMessage({ type: '', message: '' });
+    
+    try {
+      // Save resume data to Firestore
+      const resumeDataRef = doc(db, 'resumeData', user.uid);
+      await setDoc(resumeDataRef, resumeData);
+      
+      setUpdateMessage({
+        type: 'success',
+        message: 'Resume data saved successfully!'
+      });
+    } catch (error) {
+      console.error('Error saving resume data:', error);
+      setUpdateMessage({
+        type: 'error',
+        message: 'Failed to save resume data. Please try again.'
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-2">Your Profile</h1>
-      <p className="text-gray-600 mb-8">
-        Manage your personal information and view your saved documents
-      </p>
-
-      <div className="flex border-b mb-6">
-        <button
-          className={`py-2 px-4 ${
-            activeTab === 'profile'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-gray-500'
-          }`}
-          onClick={() => setActiveTab('profile')}
-        >
-          Profile Information
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === 'documents'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-gray-500'
-          }`}
-          onClick={() => setActiveTab('documents')}
-        >
-          Saved Documents
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === 'application'
-              ? 'border-b-2 border-primary text-primary'
-              : 'text-gray-500'
-          }`}
-          onClick={() => setActiveTab('application')}
-        >
-          Application Profile
-        </button>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold">Your Profile</h1>
       </div>
-
+      
       {loading ? (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          <p className="mt-2 text-gray-600">Loading profile...</p>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
         <>
+          <div className="mb-8 tabs tabs-boxed overflow-x-auto justify-center">
+            <button
+              className={`tab whitespace-nowrap px-6 ${activeTab === 'profile' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              Basic Info
+            </button>
+            <button
+              className={`tab whitespace-nowrap px-6 ${activeTab === 'documents' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('documents')}
+            >
+              Documents
+            </button>
+            <button
+              className={`tab whitespace-nowrap px-6 ${activeTab === 'application-profile' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('application-profile')}
+            >
+              Application Profile
+            </button>
+            <button
+              className={`tab whitespace-nowrap px-6 ${activeTab === 'resume-data' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('resume-data')}
+            >
+              Resume Sections
+            </button>
+          </div>
+          
+          {updateMessage.message && (
+            <div className={`mb-4 p-3 rounded ${updateMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {updateMessage.message}
+            </div>
+          )}
+          
           {activeTab === 'profile' ? (
             <div className="bg-white rounded-lg shadow-md p-6">
-              {updateMessage.message && (
-                <div className={`mb-4 p-3 rounded ${updateMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {updateMessage.message}
-                </div>
-              )}
+              <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
               
               <form onSubmit={handleProfileUpdate}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -752,12 +810,6 @@ const Profile = () => {
           ) : activeTab === 'documents' ? (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Your Saved Documents</h2>
-              
-              {updateMessage.message && activeTab === 'documents' && (
-                <div className={`mb-4 p-3 rounded ${updateMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {updateMessage.message}
-                </div>
-              )}
               
               <div className="mb-6 p-4 border border-gray-200 rounded-lg">
                 <h3 className="font-medium mb-3">Upload a New Document</h3>
@@ -940,18 +992,12 @@ const Profile = () => {
                 </div>
               )}
             </div>
-          ) : (
+          ) : activeTab === 'application-profile' ? (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Application Profile</h2>
               <p className="text-gray-600 mb-6">
                 Complete these common application fields once and reuse them when applying for jobs to save time.
               </p>
-              
-              {updateMessage.message && (
-                <div className={`mb-4 p-3 rounded ${updateMessage.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {updateMessage.message}
-                </div>
-              )}
               
               <form onSubmit={handleApplicationProfileUpdate}>
                 {/* Personal Information Section */}
@@ -1388,6 +1434,126 @@ const Profile = () => {
                     disabled={updating}
                   >
                     {updating ? 'Saving...' : 'Save Application Profile'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">Structured Resume Data</h2>
+              <p className="text-gray-600 mb-6">
+                Enter structured information from your resume to help our AI better understand your background and generate more relevant content.
+              </p>
+              
+              <form onSubmit={handleResumeDataUpdate}>
+                <div className="space-y-6">
+                  {/* Skills Section */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="skills">
+                      Skills
+                    </label>
+                    <textarea
+                      id="skills"
+                      name="skills"
+                      rows="4"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="List your skills, separated by commas (e.g., JavaScript, React, Node.js, Project Management)"
+                      value={resumeData.skills}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Include both technical and soft skills relevant to your career
+                    </p>
+                  </div>
+                  
+                  {/* Professional Summary */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="summary">
+                      Professional Summary
+                    </label>
+                    <textarea
+                      id="summary"
+                      name="summary"
+                      rows="4"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="Write a brief professional summary that highlights your experience and strengths"
+                      value={resumeData.summary}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                  </div>
+                  
+                  {/* Certifications */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="certifications">
+                      Certifications & Licenses
+                    </label>
+                    <textarea
+                      id="certifications"
+                      name="certifications"
+                      rows="4"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="List any professional certifications or licenses you hold (e.g., AWS Certified Developer, PMP, CPA)"
+                      value={resumeData.certifications}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                  </div>
+                  
+                  {/* Achievements */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="achievements">
+                      Achievements & Awards
+                    </label>
+                    <textarea
+                      id="achievements"
+                      name="achievements"
+                      rows="4"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="List notable professional achievements or awards"
+                      value={resumeData.achievements}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                  </div>
+                  
+                  {/* Languages */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="languages">
+                      Languages
+                    </label>
+                    <textarea
+                      id="languages"
+                      name="languages"
+                      rows="2"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="List languages you speak and your proficiency level (e.g., English (Native), Spanish (Intermediate))"
+                      value={resumeData.languages}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                  </div>
+                  
+                  {/* Projects */}
+                  <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="projects">
+                      Projects
+                    </label>
+                    <textarea
+                      id="projects"
+                      name="projects"
+                      rows="5"
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                      placeholder="Describe notable projects you've worked on (include project name, your role, technologies used, and key outcomes)"
+                      value={resumeData.projects}
+                      onChange={handleResumeDataChange}
+                    ></textarea>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end mt-6">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={updating}
+                  >
+                    {updating ? 'Saving...' : 'Save Resume Data'}
                   </button>
                 </div>
               </form>
