@@ -54,6 +54,9 @@ const Navbar = ({ user }) => {
                 <Link to="/jobs" className="elegant-link">
                   Jobs
                 </Link>
+                <Link to="/interview-coach" className="elegant-link">
+                  Interview Coach
+                </Link>
                 <Link to="/profile" className="elegant-link">
                   Profile
                 </Link>
@@ -125,6 +128,13 @@ const Navbar = ({ user }) => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Jobs
+                </Link>
+                <Link 
+                  to="/interview-coach" 
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Interview Coach
                 </Link>
                 <Link 
                   to="/profile" 

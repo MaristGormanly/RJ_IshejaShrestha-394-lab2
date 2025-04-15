@@ -19,4 +19,19 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-export { auth, db, storage }; 
+// Helper function to create direct download URLs that bypass CORS
+const createDirectDownloadUrl = (path) => {
+  if (!path) return null;
+  
+  // Get the bucket from Firebase config or storage options
+  const bucket = storage.app.options.storageBucket || firebaseConfig.storageBucket || 'landed-41df2.appspot.com';
+  
+  // Convert the path to a URL-safe string
+  const encodedPath = encodeURIComponent(path);
+  
+  // Create a proxied URL that handles CORS
+  const directUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodedPath}?alt=media`;
+  return `/firebase-storage-proxy${new URL(directUrl).pathname}${new URL(directUrl).search}`;
+};
+
+export { auth, db, storage, createDirectDownloadUrl }; 

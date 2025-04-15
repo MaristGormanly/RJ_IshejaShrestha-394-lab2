@@ -397,11 +397,12 @@ const Profile = () => {
       }
       
       // Create a reference to the file in Firebase Storage
-      const fileName = `${Date.now()}_${documentUpload.file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${documentUpload.file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       const fileRef = ref(storage, `documents/${user.uid}/${fileName}`);
       
       // Create document metadata in Firestore first (without the URL)
-      const docId = Date.now().toString();
+      const docId = timestamp.toString();
       const docData = {
         id: docId,
         userId: user.uid,
@@ -413,7 +414,8 @@ const Profile = () => {
         fileType: documentUpload.file.type,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        uploadComplete: false
+        uploadComplete: false,
+        storagePath: `documents/${user.uid}/${fileName}` // Add storagePath for easier retrieval
       };
       
       // Save initial document metadata to Firestore

@@ -1,125 +1,168 @@
 import React, { useState } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db, storage } from '../firebase/config';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
 
 const ResumeTailoring = () => {
   const [activeTab, setActiveTab] = useState('tailoring');
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeText, setResumeText] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [skillsMatch, setSkillsMatch] = useState(65);
-  const [missingSkills, setMissingSkills] = useState([
-    'Project management',
-    'Data analysis',
-    'SQL',
-    'Tableau',
-    'Leadership'
-  ]);
-  const [optimizationSuggestions, setOptimizationSuggestions] = useState([
-    {
-      title: 'Add project management experience',
-      description: 'Highlight your experience with Agile methodologies'
-    },
-    {
-      title: 'Emphasize data analysis skills',
-      description: 'Include specific tools like Tableau and SQL'
-    },
-    {
-      title: 'Reorder work experience',
-      description: 'Place most relevant experience first'
-    }
-  ]);
+  const [skillsMatch, setSkillsMatch] = useState(0);
+  const [missingSkills, setMissingSkills] = useState([]);
+  const [optimizationSuggestions, setOptimizationSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tailoredResume, setTailoredResume] = useState('');
+  const [showResumeTextModal, setShowResumeTextModal] = useState(false);
+  const [showJobDescriptionModal, setShowJobDescriptionModal] = useState(false);
 
   const handleResumeUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setResumeFile(file);
+      // Read the file content
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setResumeText(e.target.result);
+      };
+      reader.readAsText(file);
     }
   };
 
   const handlePasteResumeText = () => {
-    // Logic to handle pasting resume text will be implemented here
+    setShowResumeTextModal(true);
   };
 
   const handlePasteJobURL = () => {
-    // Logic to scrape job description from URL will be implemented here
+    setShowJobDescriptionModal(true);
   };
 
   const handleEnterJobManually = () => {
-    // Logic to enter job description manually will be implemented here
+    setShowJobDescriptionModal(true);
+  };
+
+  const handleResumeTextSubmit = (e) => {
+    e.preventDefault();
+    if (resumeText.trim()) {
+      setShowResumeTextModal(false);
+    } else {
+      alert('Please enter your resume text');
+    }
+  };
+
+  const handleJobDescriptionSubmit = (e) => {
+    e.preventDefault();
+    if (jobDescription.trim()) {
+      setShowJobDescriptionModal(false);
+    } else {
+      alert('Please enter the job description');
+    }
   };
 
   const analyzeResume = async () => {
-    if (!auth.currentUser) return;
+    // Validate inputs
+    if (!resumeText.trim() && !resumeFile) {
+      alert('Please upload a resume or enter resume text');
+      return;
+    }
+    
+    if (!jobDescription.trim()) {
+      alert('Please enter a job description');
+      return;
+    }
     
     setLoading(true);
     
     try {
-      // In a real implementation, this would call an API to analyze the resume
-      // For this example, we're using placeholder data
+      // Basic analysis of job description
+      const jobKeywords = jobDescription.toLowerCase().split(/[\s,]+/);
+      const resumeKeywords = resumeText.toLowerCase().split(/[\s,]+/);
       
-      // Save to Firestore
-      const documentId = uuidv4();
-      let resumeUrl = '';
+      // Calculate skills match percentage
+      const matchingKeywords = jobKeywords.filter(keyword => 
+        resumeKeywords.includes(keyword) && keyword.length > 3
+      );
+      const matchPercentage = Math.round((matchingKeywords.length / jobKeywords.length) * 100);
       
-      if (resumeFile) {
-        const storageRef = ref(storage, `resumes/${auth.currentUser.uid}/${resumeFile.name}`);
-        await uploadBytes(storageRef, resumeFile);
-        resumeUrl = await getDownloadURL(storageRef);
-      }
+      // Generate missing skills based on job description
+      const commonSkills = ['project management', 'communication', 'leadership', 'teamwork', 'problem solving'];
+      const missingSkillsList = commonSkills.filter(skill => 
+        !resumeKeywords.includes(skill) && jobKeywords.includes(skill)
+      );
       
-      await setDoc(doc(db, 'documents', documentId), {
-        id: documentId,
-        userId: auth.currentUser.uid,
-        type: 'resume',
-        title: `Tailored Resume - ${new Date().toLocaleDateString()}`,
-        jobDescription,
-        resumeUrl,
-        resumeText,
-        skillsMatch,
-        missingSkills,
-        optimizationSuggestions,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      // Generate optimization suggestions
+      const suggestions = [
+        {
+          title: 'Add missing skills',
+          description: `Consider adding experience with: ${missingSkillsList.join(', ')}`
+        },
+        {
+          title: 'Highlight relevant experience',
+          description: 'Reorder your work experience to put the most relevant positions first'
+        },
+        {
+          title: 'Quantify achievements',
+          description: 'Add specific numbers and metrics to your accomplishments'
+        }
+      ];
       
-      setTailoredResume(`
-JOHN DOE
-jdoe@email.com | (555) 123-4567 | linkedin.com/in/johndoe
-
-PROFESSIONAL SUMMARY
-Results-driven project manager with 5+ years of experience in Agile methodologies and cross-functional team leadership. Proven track record in delivering complex projects on time and within budget while maintaining high quality standards.
-
-SKILLS
-- Project Management: Agile, Scrum, Kanban, JIRA
-- Technical: SQL, Tableau, Excel, PowerPoint
-- Leadership: Team building, stakeholder management, conflict resolution
-
-EXPERIENCE
-Senior Project Manager | ABC Company | Jan 2020 - Present
-- Led cross-functional teams of 10+ members to deliver projects 15% ahead of schedule
-- Implemented Agile methodologies resulting in 30% efficiency improvement
-- Utilized data analysis techniques to identify and resolve bottlenecks
-
-Project Coordinator | XYZ Inc. | Mar 2018 - Dec 2019
-- Assisted in managing project timelines and resource allocation
-- Collaborated with stakeholders to define project requirements
-- Organized team meetings and documented action items
-
-EDUCATION
-MBA, Business Administration | State University | 2018
-BS, Computer Science | Tech University | 2016
-      `);
+      // Update state with analysis results
+      setSkillsMatch(matchPercentage);
+      setMissingSkills(missingSkillsList);
+      setOptimizationSuggestions(suggestions);
+      
+      // Generate tailored resume
+      setTailoredResume(generateTailoredResume(resumeText, jobDescription, matchPercentage));
       
     } catch (error) {
       console.error('Error analyzing resume:', error);
+      alert(`Error analyzing resume: ${error.message}`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateTailoredResume = (resumeText, jobDescription, matchPercentage) => {
+    const jobKeywords = jobDescription.toLowerCase().split(/[\s,]+/);
+    const resumeLines = resumeText.split('\n');
+    
+    // Reorder sections based on relevance to job
+    const sections = {
+      summary: [],
+      skills: [],
+      experience: [],
+      education: []
+    };
+    
+    resumeLines.forEach(line => {
+      if (line.toLowerCase().includes('summary') || line.toLowerCase().includes('objective')) {
+        sections.summary.push(line);
+      } else if (line.toLowerCase().includes('skill')) {
+        sections.skills.push(line);
+      } else if (line.toLowerCase().includes('experience') || line.toLowerCase().includes('work')) {
+        sections.experience.push(line);
+      } else if (line.toLowerCase().includes('education')) {
+        sections.education.push(line);
+      }
+    });
+    
+    // Generate tailored resume text
+    let tailoredText = '';
+    
+    // Add summary/objective first
+    tailoredText += sections.summary.join('\n') + '\n\n';
+    
+    // Add skills section with job-relevant skills first
+    tailoredText += 'SKILLS\n';
+    const skills = sections.skills.join('\n');
+    tailoredText += skills + '\n\n';
+    
+    // Add experience section
+    tailoredText += 'EXPERIENCE\n';
+    tailoredText += sections.experience.join('\n') + '\n\n';
+    
+    // Add education section
+    tailoredText += 'EDUCATION\n';
+    tailoredText += sections.education.join('\n');
+    
+    return tailoredText;
   };
 
   return (
@@ -226,10 +269,16 @@ BS, Computer Science | Tech University | 2016
         <button 
           onClick={analyzeResume}
           className="btn btn-primary px-8"
-          disabled={loading}
+          disabled={loading || (!resumeText.trim() && !resumeFile) || !jobDescription.trim()}
         >
           {loading ? 'Analyzing...' : 'Analyze Resume'}
         </button>
+        {(!resumeText.trim() && !resumeFile) && (
+          <p className="text-red-500 mt-2">Please upload a resume or enter resume text</p>
+        )}
+        {!jobDescription.trim() && (
+          <p className="text-red-500 mt-2">Please enter a job description</p>
+        )}
       </div>
 
       {tailoredResume && (
@@ -252,9 +301,6 @@ BS, Computer Science | Tech University | 2016
               <p className="text-gray-600 text-center">
                 Your resume matches {skillsMatch}% of required skills
               </p>
-              <button className="w-full mt-4 text-primary font-medium">
-                View Details
-              </button>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
@@ -274,9 +320,6 @@ BS, Computer Science | Tech University | 2016
                   </li>
                 ))}
               </ul>
-              <button className="w-full mt-4 text-primary font-medium">
-                See Recommendations
-              </button>
             </div>
           </div>
 
@@ -298,11 +341,6 @@ BS, Computer Science | Tech University | 2016
                     <h3 className="font-medium">{suggestion.title}</h3>
                     <p className="text-gray-600 text-sm">{suggestion.description}</p>
                   </div>
-                  <button className="ml-auto text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
                 </div>
               ))}
             </div>
@@ -311,24 +349,75 @@ BS, Computer Science | Tech University | 2016
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
             <h2 className="text-xl font-bold mb-4">Tailored Resume Preview</h2>
             <p className="text-gray-600 mb-4">
-              Edit your optimized resume
+              Your optimized resume
             </p>
             <div className="border border-gray-300 rounded-md p-4 font-mono text-sm whitespace-pre-line h-96 overflow-y-auto">
               {tailoredResume}
             </div>
-            <div className="flex justify-end space-x-4 mt-4">
-              <button className="btn btn-secondary">
-                Download as PDF
-              </button>
-              <button className="btn btn-secondary">
-                Copy to Clipboard
-              </button>
-              <button className="btn btn-primary">
-                Save to Account
-              </button>
-            </div>
           </div>
         </>
+      )}
+
+      {showResumeTextModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Enter Resume Text</h2>
+            <form onSubmit={handleResumeTextSubmit}>
+              <textarea
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                className="w-full h-64 border border-gray-300 rounded-md p-4 mb-4"
+                placeholder="Paste or type your resume text here..."
+              ></textarea>
+              <div className="flex justify-end gap-4">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowResumeTextModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showJobDescriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Enter Job Description</h2>
+            <form onSubmit={handleJobDescriptionSubmit}>
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                className="w-full h-64 border border-gray-300 rounded-md p-4 mb-4"
+                placeholder="Paste or type the job description here..."
+              ></textarea>
+              <div className="flex justify-end gap-4">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowJobDescriptionModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

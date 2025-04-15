@@ -1,0 +1,36 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Default rule: deny all access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // User documents - allow authenticated access with proper owner checks
+    match /documents/{userId}/{fileName} {
+      // Regular access for the document owner
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow OPTIONS requests for CORS
+      allow read: if request.method == 'GET' || request.method == 'OPTIONS';
+      
+      // Allow read with a valid download token (for direct downloads)
+      allow read: if request.auth != null && 
+                   (request.auth.uid == userId || 
+                    resource.metadata.public == 'true');
+    }
+    
+    // Public documents - allow authenticated access only
+    match /documents/{fileName} {
+      allow read: if request.auth != null || request.method == 'GET' || request.method == 'OPTIONS';
+      allow write: if request.auth != null;
+    }
+    
+    // AI-generated content - allow access to the owner
+    match /ai-generated/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.method == 'GET' || request.method == 'OPTIONS';
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+} 

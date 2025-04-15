@@ -108,9 +108,72 @@ const Dashboard = () => {
     </svg>
   );
 
+  // AI icon
+  const AIIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+    </svg>
+  );
+
+  // Interview icon
+  const InterviewIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+    </svg>
+  );
+
   return (
     <div className="max-w-5xl mx-auto">
+      {/* Featured AI Tools Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold mb-6 text-navy border-b pb-2">AI-Powered Career Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="card p-6 hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50">
+            <div className="flex justify-between mb-4">
+              <h2 className="section-title text-primary">AI Resume Generator</h2>
+              <span className="text-primary">
+                <AIIcon />
+              </span>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Generate personalized, professional resumes with our AI. Tailored to your profile and target job description for maximum relevance and impact.
+            </p>
+            <Link to="/ai-resume">
+              <Button color="primary">Generate AI Resume</Button>
+            </Link>
+          </div>
 
+          <div className="card p-6 hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50">
+            <div className="flex justify-between mb-4">
+              <h2 className="section-title text-primary">AI Cover Letter Generator</h2>
+              <span className="text-primary">
+                <AIIcon />
+              </span>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Create compelling cover letters instantly with AI. Personalized to highlight your relevant skills and experience for the specific job you're targeting.
+            </p>
+            <Link to="/ai-cover-letter">
+              <Button color="primary">Generate AI Cover Letter</Button>
+            </Link>
+          </div>
+
+          <div className="card p-6 hover:border-primary hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-blue-50">
+            <div className="flex justify-between mb-4">
+              <h2 className="section-title text-primary">AI Interview Coach</h2>
+              <span className="text-primary">
+                <InterviewIcon />
+              </span>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Practice your interview skills with our AI-powered coach. Get personalized feedback, improve your responses, and boost your confidence for real interviews.
+            </p>
+            <Link to="/interview-coach">
+              <Button color="primary">Start Interview Practice</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <div className="card p-6 hover:border-gold transition-colors duration-300">

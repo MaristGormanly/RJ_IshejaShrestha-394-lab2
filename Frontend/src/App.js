@@ -12,10 +12,15 @@ import ResumeTailoring from './pages/ResumeTailoring';
 import Templates from './pages/Templates';
 import Jobs from './pages/Jobs';
 import Profile from './pages/Profile';
+import AIResumeGenerator from './pages/AIResumeGenerator';
+import AICoverLetterGenerator from './pages/AICoverLetterGenerator';
+import InterviewCoach from './pages/InterviewCoach';
+import InterviewHistory from './pages/InterviewHistory';
 
 // Components
 import Navbar from './components/Navbar';
 import AuthRoute from './components/AuthRoute';
+import JobScraper from './components/JobScraper';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -52,8 +57,12 @@ function App() {
           <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
           <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
           <Route path="/templates" element={<AuthRoute user={user}><Templates /></AuthRoute>} />
-          <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
+          <Route path="/jobs" element={<AuthRoute user={user}><Jobs><JobScraper /></Jobs></AuthRoute>} />
           <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
+          <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
+          <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />
+          <Route path="/interview-coach" element={<AuthRoute user={user}><InterviewCoach /></AuthRoute>} />
+          <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
         </Routes>
       </div>
     </div>

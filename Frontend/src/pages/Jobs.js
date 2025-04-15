@@ -4,7 +4,7 @@ import { db, auth } from '../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import JobApplicationModal from '../components/JobApplicationModal';
 
-const Jobs = () => {
+const Jobs = ({ children }) => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
@@ -142,6 +142,11 @@ const Jobs = () => {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-navy mb-6 font-serif">Saved Jobs</h1>
+      
+      {/* Job Scraper Component */}
+      <div className="mb-8">
+        {children}
+      </div>
       
       {jobs.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-6 text-center">

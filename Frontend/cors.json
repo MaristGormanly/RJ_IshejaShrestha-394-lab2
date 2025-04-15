@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:3000", "https://landed-41df2.web.app", "https://landed-41df2.firebaseapp.com"],
+    "method": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
+  }
+] 
