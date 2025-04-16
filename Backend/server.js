@@ -7,14 +7,47 @@ const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./db/config');
 
+// Import routes
+const jobsRoutes = require('./routes/jobs');
+
 // Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Configure CORS for all routes
+app.use(cors({
+  origin: '*', // In production, change this to your specific domain
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+// Parse JSON bodies
 app.use(express.json());
+
+// Add headers middleware
+app.use((req, res, next) => {
+  // Set CORS headers manually as a fallback
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  
+  // Log all requests
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  
+  next();
+});
+
+// Routes
+app.use('/api/jobs', jobsRoutes);
 
 // Configure multer for file upload
 const storage = multer.diskStorage({

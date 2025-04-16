@@ -30,3 +30,5 @@ firebase-service-account.json
 .env.example
 
 firestore.rules
+
+.env

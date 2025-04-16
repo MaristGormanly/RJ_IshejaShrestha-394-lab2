@@ -9,18 +9,17 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CoverLetterGenerator from './pages/CoverLetterGenerator';
 import ResumeTailoring from './pages/ResumeTailoring';
-import Templates from './pages/Templates';
 import Jobs from './pages/Jobs';
 import Profile from './pages/Profile';
 import AIResumeGenerator from './pages/AIResumeGenerator';
 import AICoverLetterGenerator from './pages/AICoverLetterGenerator';
 import InterviewCoach from './pages/InterviewCoach';
 import InterviewHistory from './pages/InterviewHistory';
+import LandingPage from './pages/LandingPage';
 
 // Components
 import Navbar from './components/Navbar';
 import AuthRoute from './components/AuthRoute';
-import JobScraper from './components/JobScraper';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -49,15 +48,14 @@ function App() {
   return (
     <div className="min-h-screen bg-offwhite text-gray-800">
       <Navbar user={user} />
-      <div className="container mx-auto px-4 py-8">
+      <div className={`${!user && window.location.pathname === '/' ? '' : 'container mx-auto px-4 py-8'}`}>
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-          <Route path="/" element={<AuthRoute user={user}><Dashboard /></AuthRoute>} />
+          <Route path="/" element={user ? <AuthRoute user={user}><Dashboard /></AuthRoute> : <LandingPage />} />
           <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
           <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
-          <Route path="/templates" element={<AuthRoute user={user}><Templates /></AuthRoute>} />
-          <Route path="/jobs" element={<AuthRoute user={user}><Jobs><JobScraper /></Jobs></AuthRoute>} />
+          <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
           <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
           <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
           <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />

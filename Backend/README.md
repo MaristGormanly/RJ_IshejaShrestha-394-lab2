@@ -57,3 +57,31 @@ The server includes error handling for:
 - File type validation
 - File size limits
 - Secure file naming
+
+## Adzuna API Integration
+
+This application uses the Adzuna API to fetch real job listings. To set up this integration:
+
+1. Sign up for an Adzuna API account at https://developer.adzuna.com/
+2. Create a new application to obtain your App ID and API Key
+3. Update your `.env` file with your Adzuna credentials:
+   ```
+   ADZUNA_APP_ID=your_app_id
+   ADZUNA_API_KEY=your_api_key
+   ```
+
+The API has the following endpoints:
+
+- `GET /api/jobs` - Search for jobs using the Adzuna API
+  - Query parameters:
+    - `what` - Job title or keywords
+    - `where` - Location
+    - `page` - Page number (default: 1)
+    - `results_per_page` - Number of results per page (default: 10)
+
+Example requests:
+
+```
+GET /api/jobs?what=software%20developer&where=london
+GET /api/jobs?what=data%20scientist&page=2
+```

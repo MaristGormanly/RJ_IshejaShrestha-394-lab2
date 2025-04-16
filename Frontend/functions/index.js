@@ -1,5 +1,4 @@
-const { scrapeJob } = require('./jobScraper');
-
+// Add other firebase functions here
 module.exports = {
-  scrapeJob
+  // No functions currently
 }; 

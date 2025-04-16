@@ -4,7 +4,7 @@ import { db, auth } from '../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import JobApplicationModal from '../components/JobApplicationModal';
 
-const Jobs = ({ children }) => {
+const Jobs = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
@@ -36,6 +36,14 @@ const Jobs = ({ children }) => {
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Sort jobs by savedAt date (newest first)
+      jobsList.sort((a, b) => {
+        const dateA = a.savedAt?.toDate?.() || new Date(a.savedAt);
+        const dateB = b.savedAt?.toDate?.() || new Date(b.savedAt);
+        return dateB - dateA;
+      });
+      
       setJobs(jobsList);
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -143,11 +151,6 @@ const Jobs = ({ children }) => {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-navy mb-6 font-serif">Saved Jobs</h1>
       
-      {/* Job Scraper Component */}
-      <div className="mb-8">
-        {children}
-      </div>
-      
       {jobs.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
           <p className="text-lg text-gray-600 mb-4">You haven't saved any jobs yet.</p>
@@ -155,7 +158,7 @@ const Jobs = ({ children }) => {
             onClick={() => navigate('/')}
             className="px-4 py-2 bg-navy text-white rounded hover:bg-blue-700 transition-colors"
           >
-            Browse Dashboard
+            Browse Jobs
           </button>
         </div>
       ) : (
@@ -168,6 +171,14 @@ const Jobs = ({ children }) => {
                     <h2 className="text-xl font-bold text-navy mb-1">{job.title}</h2>
                     <p className="text-md text-gray-700 mb-1">{job.company}</p>
                     <p className="text-sm text-gray-500 mb-4">{job.location}</p>
+                    {job.salary && (
+                      <p className="text-sm text-gray-500 mb-4">{job.salary}</p>
+                    )}
+                    {job.savedAt && (
+                      <p className="text-xs text-gray-400">
+                        Saved on {new Date(job.savedAt.seconds * 1000).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -191,12 +202,23 @@ const Jobs = ({ children }) => {
                 </div>
                 
                 <div className="flex flex-wrap gap-3 mt-4">
-                  <button
-                    onClick={() => handleApplyToJob(job)}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    Apply Now
-                  </button>
+                  {job.url ? (
+                    <a
+                      href={job.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      Apply Now
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleApplyToJob(job)}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      Apply Now
+                    </button>
+                  )}
                   <button
                     onClick={() => handleCreateCoverLetter(job)}
                     className="px-4 py-2 bg-navy text-white rounded hover:bg-blue-700 transition-colors"

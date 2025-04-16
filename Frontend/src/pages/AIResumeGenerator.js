@@ -997,7 +997,7 @@ const AIResumeGenerator = () => {
     element.click();
     document.body.removeChild(element);
   };
-  
+
   // New function to download as Word document
   const handleDownloadWord = async () => {
     if (!generatedResume) return;

@@ -17,4 +17,26 @@ module.exports = function (app) {
       }
     })
   );
+
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target: 'http://localhost:5000',
+      changeOrigin: true,
+      pathRewrite: {
+        '^/api': '/api', // No rewrite needed
+      },
+      onProxyReq: (proxyReq, req, res) => {
+        // Log proxy requests
+        console.log(`Proxying ${req.method} ${req.url} to http://localhost:5000${req.url}`);
+      },
+      onError: (err, req, res) => {
+        console.error('Proxy error:', err);
+        res.writeHead(500, {
+          'Content-Type': 'application/json',
+        });
+        res.end(JSON.stringify({ message: 'Error connecting to API server' }));
+      },
+    })
+  );
 }; 
