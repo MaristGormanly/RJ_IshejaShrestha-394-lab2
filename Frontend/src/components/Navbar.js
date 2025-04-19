@@ -25,7 +25,7 @@ const Navbar = ({ user }) => {
   };
 
   return (
-    <nav className={`${isLandingPage ? 'bg-navy absolute w-full z-10' : 'bg-white border-b border-gray-100 shadow-soft'}`}>
+    <nav className={`${isLandingPage ? 'bg-transparent absolute w-full z-10' : 'bg-white border-b border-gray-100 shadow-soft'}`}>
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-8">
