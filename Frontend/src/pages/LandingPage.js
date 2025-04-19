@@ -239,10 +239,10 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-navy text-black text-center">
+      <section className="py-20 bg-gradient-to-br from-blue-600 to-navy text-white text-center">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold mb-6 font-serif">Ready to Land Your Dream Job?</h2>
-          <p className="text-xl md:text-2xl mb-8 text-gray-800 max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
             Join thousands of professionals who have accelerated their job search with our AI-powered tools.
           </p>
           <Link to="/register">
@@ -253,7 +253,7 @@ const LandingPage = () => {
               </svg>
             </button>
           </Link>
-          <p className="mt-4 text-gray-800">No credit card required. Free forever.</p>
+          <p className="mt-4 text-blue-200">No credit card required. Free forever.</p>
         </div>
       </section>
 
