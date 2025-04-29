@@ -107,6 +107,14 @@ const FeedbackDisplay = ({ feedback, session, onStartNew }) => {
           Skills Assessment
         </button>
         <button
+          className={`py-2 px-4 font-medium ${activeSection === 'roleAdvice' 
+            ? 'text-primary border-b-2 border-primary' 
+            : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveSection('roleAdvice')}
+        >
+          Role Advice
+        </button>
+        <button
           className={`py-2 px-4 font-medium ${activeSection === 'timing' 
             ? 'text-primary border-b-2 border-primary' 
             : 'text-gray-500 hover:text-gray-700'}`}
@@ -201,6 +209,50 @@ const FeedbackDisplay = ({ feedback, session, onStartNew }) => {
               <span className="font-medium">4-6:</span> Areas needing significant improvement<br />
               <span className="font-medium">7-8:</span> Good performance with minor issues<br />
               <span className="font-medium">9-10:</span> Outstanding, professional-level performance
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role-specific Advice */}
+      {activeSection === 'roleAdvice' && (
+        <div className="space-y-6">
+          <div className="card p-6 bg-white shadow-sm rounded-lg">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-3">
+                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-navy">Career Advice for {session.jobTitle}</h3>
+            </div>
+            
+            {feedback.roleSpecificAdvice ? (
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <h4 className="font-medium text-navy mb-2">Role-Specific Advice</h4>
+                <p className="text-gray-700 whitespace-pre-line">{feedback.roleSpecificAdvice}</p>
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <h4 className="font-medium text-navy mb-2">General Career Development</h4>
+                <p className="text-gray-700">
+                  To advance in your {session.jobTitle} career, focus on developing both technical skills and soft skills.
+                  Seek out projects that stretch your abilities and demonstrate your potential for growth.
+                </p>
+              </div>
+            )}
+            
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-medium text-navy mb-2">Industry Insights</h4>
+              <p className="text-gray-700 mb-3">
+                Based on your interview performance, here are some industry-specific insights that may help you prepare for future interviews in this field:
+              </p>
+              <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                <li>Keep up with the latest trends and technologies in {session.industry} to demonstrate industry awareness</li>
+                <li>Prepare specific examples that showcase your problem-solving abilities in relevant scenarios</li>
+                <li>Practice explaining complex concepts in simple terms to demonstrate communication skills</li>
+                <li>Research common challenges in the industry and prepare thoughtful perspectives on them</li>
+              </ul>
             </div>
           </div>
         </div>

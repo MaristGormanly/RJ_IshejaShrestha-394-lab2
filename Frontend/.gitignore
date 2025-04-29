@@ -26,6 +26,6 @@ yarn-error.log*
 firebase-debug.log 
 
 .env
-.env.example
+.env.local
 
 firestore.rules
