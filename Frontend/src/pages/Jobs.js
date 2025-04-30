@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, deleteDoc, query, where, getDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
 import { useNavigate } from 'react-router-dom';
 import JobApplicationModal from '../components/JobApplicationModal';
@@ -34,7 +34,9 @@ const Jobs = () => {
       const jobsSnapshot = await getDocs(jobsQuery);
       const jobsList = jobsSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        applied: doc.data().applied || false,
+        appliedDate: doc.data().appliedDate || null
       }));
       
       // Sort jobs by savedAt date (newest first)
@@ -76,22 +78,6 @@ const Jobs = () => {
     }
   };
 
-  const handleCreateCoverLetter = (job) => {
-    navigate('/cover-letter', { 
-      state: { 
-        job: job 
-      } 
-    });
-  };
-
-  const handleTailorResume = (job) => {
-    navigate('/resume-tailoring', { 
-      state: { 
-        job: job 
-      } 
-    });
-  };
-
   const handleApplyToJob = (job) => {
     setSelectedJob(job);
     setShowApplicationModal(true);
@@ -122,8 +108,8 @@ const Jobs = () => {
         message: `Your application for "${selectedJob.title}" at ${selectedJob.company} has been submitted successfully!`
       });
       
-      // In a real application, you might update the job status in Firestore
-      // to mark it as "applied"
+      // Update the job status to mark it as applied
+      await markJobAsApplied(selectedJob.id);
       
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -135,6 +121,62 @@ const Jobs = () => {
       setApplicationSubmitting(false);
     }
   };
+
+  const markJobAsApplied = async (jobId) => {
+    try {
+      const jobRef = doc(db, 'jobs', jobId);
+      const now = new Date();
+      
+      await updateDoc(jobRef, {
+        applied: true,
+        appliedDate: now
+      });
+      
+      // Update local state
+      setJobs(jobs.map(job => 
+        job.id === jobId 
+          ? { ...job, applied: true, appliedDate: now } 
+          : job
+      ));
+    } catch (error) {
+      console.error('Error marking job as applied:', error);
+    }
+  };
+
+  // Job application statistics
+  const appliedJobs = jobs.filter(job => job.applied);
+  const savedJobs = jobs.filter(job => !job.applied);
+  
+  // Get application stats by month (last 6 months)
+  const getApplicationStats = () => {
+    const last6Months = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 6; i++) {
+      const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      last6Months.push({
+        month: month.toLocaleString('default', { month: 'short' }),
+        year: month.getFullYear(),
+        count: 0
+      });
+    }
+    
+    appliedJobs.forEach(job => {
+      if (job.appliedDate) {
+        const appliedDate = job.appliedDate?.toDate?.() || new Date(job.appliedDate);
+        const monthIndex = today.getMonth() - appliedDate.getMonth() + 
+                          (12 * (today.getFullYear() - appliedDate.getFullYear()));
+        
+        if (monthIndex >= 0 && monthIndex < 6) {
+          last6Months[monthIndex].count++;
+        }
+      }
+    });
+    
+    return last6Months.reverse();
+  };
+
+  const applicationStats = getApplicationStats();
 
   if (loading) {
     return (
@@ -149,9 +191,112 @@ const Jobs = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold text-navy mb-6 font-serif">Saved Jobs</h1>
+      {/* Application Statistics */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-2xl font-bold text-navy mb-4 font-serif">Application Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">Overview</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-3 rounded shadow-sm">
+                <p className="text-sm text-gray-500">Applied Jobs</p>
+                <p className="text-2xl font-bold text-navy">{appliedJobs.length}</p>
+              </div>
+              <div className="bg-white p-3 rounded shadow-sm">
+                <p className="text-sm text-gray-500">Saved Jobs</p>
+                <p className="text-2xl font-bold text-navy">{savedJobs.length}</p>
+              </div>
+              <div className="bg-white p-3 rounded shadow-sm">
+                <p className="text-sm text-gray-500">Success Rate</p>
+                <p className="text-2xl font-bold text-navy">
+                  {jobs.length > 0 ? Math.round((appliedJobs.length / jobs.length) * 100) : 0}%
+                </p>
+              </div>
+              <div className="bg-white p-3 rounded shadow-sm">
+                <p className="text-sm text-gray-500">Applications This Month</p>
+                <p className="text-2xl font-bold text-navy">{applicationStats[applicationStats.length - 1]?.count || 0}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-medium mb-2">Monthly Applications</h3>
+            <div className="h-48 flex items-end justify-between">
+              {applicationStats.map((stat, index) => (
+                <div key={index} className="flex flex-col items-center w-1/6">
+                  <div 
+                    className="bg-navy w-full rounded-t" 
+                    style={{ 
+                      height: `${stat.count > 0 ? Math.max(stat.count * 15, 15) : 0}px`,
+                      minHeight: stat.count > 0 ? '15px' : '0'
+                    }}
+                  ></div>
+                  <p className="text-xs mt-2">{stat.month}</p>
+                  <p className="text-xs text-gray-500">{stat.count}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Applied Jobs Section */}
+      {appliedJobs.length > 0 && (
+        <>
+          <h2 className="text-2xl font-bold text-navy mb-4 font-serif">Applied Jobs</h2>
+          <div className="grid grid-cols-1 gap-6 mb-8">
+            {appliedJobs.map((job) => (
+              <div key={job.id} className="bg-white rounded-lg shadow-md overflow-hidden border-l-4 border-green-500">
+                <div className="p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-xl font-bold text-navy mb-1">{job.title}</h2>
+                      <p className="text-md text-gray-700 mb-1">{job.company}</p>
+                      <p className="text-sm text-gray-500 mb-2">{job.location}</p>
+                      {job.salary && (
+                        <p className="text-sm text-gray-500 mb-2">{job.salary}</p>
+                      )}
+                      <div className="flex items-center">
+                        <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-2">
+                          Applied
+                        </span>
+                        {job.appliedDate && (
+                          <p className="text-xs text-gray-400">
+                            on {new Date(job.appliedDate.seconds * 1000).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                        title="Delete job"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <h3 className="font-medium text-navy mb-2">Job Description</h3>
+                    <p className="text-gray-600 mb-4 whitespace-pre-line">
+                      {job.description?.substring(0, 200)}
+                      {job.description?.length > 200 ? '...' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Saved Jobs Section */}
+      <h2 className="text-2xl font-bold text-navy mb-4 font-serif">Saved Jobs</h2>
       
-      {jobs.length === 0 ? (
+      {savedJobs.length === 0 ? (
         <div className="bg-white rounded-lg shadow-md p-6 text-center">
           <p className="text-lg text-gray-600 mb-4">You haven't saved any jobs yet.</p>
           <button 
@@ -163,7 +308,7 @@ const Jobs = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {jobs.map((job) => (
+          {savedJobs.map((job) => (
             <div key={job.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-start">
@@ -220,16 +365,10 @@ const Jobs = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => handleCreateCoverLetter(job)}
-                    className="px-4 py-2 bg-navy text-white rounded hover:bg-blue-700 transition-colors"
+                    onClick={() => markJobAsApplied(job.id)}
+                    className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors"
                   >
-                    Create Cover Letter
-                  </button>
-                  <button
-                    onClick={() => handleTailorResume(job)}
-                    className="px-4 py-2 border border-navy text-navy rounded hover:bg-gray-100 transition-colors"
-                  >
-                    Tailor Resume
+                    Applied
                   </button>
                 </div>
               </div>
@@ -252,4 +391,4 @@ const Jobs = () => {
   );
 };
 
-export default Jobs; 
+export default Jobs;
