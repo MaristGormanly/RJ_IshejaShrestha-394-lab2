@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
+import axios from 'axios';
 
 const LandingPage = () => {
+  const [userCount, setUserCount] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/stats/users');
+        setUserCount(response.data.userCount);
+      } catch (error) {
+        console.error('Error fetching user count:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserCount();
+  }, []);
+
   return (
     <div className="landing-page">
       {/* Hero Section */}
@@ -10,9 +29,9 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4">Land Your Dream Job With AI-Powered Tools</h1>
-              <p className="text-xl mb-8 text-blue-100">
-                Streamline your job search with AI tools that help you create tailored resumes, 
+              <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4 text-white">Land Your Dream Job With AI-Powered Tools</h1>
+              <p className="text-xl mb-8 text-gray-100">
+                Streamline your job search with AI tools that help you stand out and create tailored resumes, 
                 write compelling cover letters, and prepare for interviews.
               </p>
               <div className="flex space-x-4">
@@ -26,8 +45,8 @@ const LandingPage = () => {
             </div>
             <div className="md:w-1/2 md:pl-10">
               <img 
-                src="https://images.unsplash.com/photo-1568992687947-868a62a9f521?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1632&q=80" 
-                alt="Job seeker using laptop" 
+                src="/images/landingpageimg.png" 
+                alt="Woman getting hired" 
                 className="rounded-lg shadow-xl w-full object-cover h-80 md:h-96" 
               />
             </div>
@@ -36,22 +55,24 @@ const LandingPage = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-gradient-to-r from-gray-50 to-white shadow-md">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
+            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
               <p className="text-4xl font-bold text-navy mb-2">93%</p>
               <p className="text-gray-600">Success Rate</p>
             </div>
-            <div>
-              <p className="text-4xl font-bold text-navy mb-2">5k+</p>
+            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
+              <p className="text-4xl font-bold text-navy mb-2">
+                {loading ? '...' : userCount ? `${userCount}+` : '5k+'}
+              </p>
               <p className="text-gray-600">Happy Users</p>
             </div>
-            <div>
+            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
               <p className="text-4xl font-bold text-navy mb-2">250+</p>
               <p className="text-gray-600">Companies Hiring</p>
             </div>
-            <div>
+            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
               <p className="text-4xl font-bold text-navy mb-2">100K+</p>
               <p className="text-gray-600">Job Listings</p>
             </div>
@@ -154,10 +175,10 @@ const LandingPage = () => {
               </Link>
             </div>
             <div className="md:w-1/2">
-              <img 
-                src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1472&q=80" 
-                alt="Person searching for jobs on laptop" 
-                className="rounded-lg shadow-xl w-full" 
+            <img 
+                src="/images/landingimg2.png" 
+                alt="Job application process" 
+                className="rounded-lg shadow-xl w-full object-cover h-80 md:h-96" 
               />
             </div>
           </div>
@@ -239,21 +260,23 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-navy text-white text-center">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 font-serif">Ready to Land Your Dream Job?</h2>
-          <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
+      <section className="py-24 bg-white text-center relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-8 font-serif text-center text-navy">Ready to Land Your Dream Job?</h2>
+          <p className="text-xl md:text-2xl mb-12 text-gray-600 max-w-3xl mx-auto">
             Join thousands of professionals who have accelerated their job search with our AI-powered tools.
           </p>
-          <Link to="/register">
-            <button className="inline-flex items-center justify-center px-8 py-4 bg-white text-navy text-lg font-bold rounded-md shadow-lg hover:bg-blue-50 transition transform hover:scale-105">
-              Get Started Free
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-              </svg>
-            </button>
-          </Link>
-          <p className="mt-4 text-blue-200">No credit card required. Free forever.</p>
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Link to="/register">
+              <button className="inline-flex items-center justify-center px-8 py-4 bg-navy text-white text-lg font-bold rounded-md shadow-lg hover:bg-blue-800 transition transform hover:scale-105">
+                Get Started Free
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </button>
+            </Link>
+            <p className="text-gray-500">No credit card required. Free forever.</p>
+          </div>
         </div>
       </section>
 

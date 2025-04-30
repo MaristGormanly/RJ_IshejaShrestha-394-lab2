@@ -25,62 +25,63 @@ const Navbar = ({ user }) => {
   };
 
   return (
-    <nav className={`${isLandingPage ? 'bg-transparent absolute w-full z-10' : 'bg-white border-b border-gray-100 shadow-soft'}`}>
+    <nav className={`${isLandingPage ? 'bg-transparent absolute w-full z-10' : 'bg-white border-b border-gray-100 shadow-md'} py-6 mb-8`}>
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-8">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-12">
             <Link to="/" className="flex items-center">
-              <h1 className={`text-2xl font-serif font-bold ${isLandingPage ? 'text-white' : 'text-navy'}`}>
+              <h1 className={`text-3xl font-serif font-bold ${isLandingPage ? 'text-white' : 'text-navy'} relative`}>
                 Landed
+                <div className={`absolute bottom-0 left-0 w-full h-0.5 ${isLandingPage ? 'bg-white bg-opacity-20' : 'bg-navy bg-opacity-10'}`}></div>
               </h1>
             </Link>
             
             {user && (
-              <div className="hidden md:flex space-x-6">
-                <Link to="/jobs" className="elegant-link">
+              <div className="hidden md:flex space-x-8 items-center">
+                <Link to="/jobs" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
                   Jobs
                 </Link>
-                <Link to="/interview-coach" className="elegant-link">
+                <Link to="/interview-coach" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
                   Interview Coach
                 </Link>
-                <Link to="/profile" className="elegant-link">
+                <Link to="/profile" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
                   Profile
                 </Link>
               </div>
             )}
 
             {isLandingPage && (
-              <div className="hidden md:flex space-x-6">
-                <a href="#features" className="text-white hover:text-gray-200 transition duration-150">
+              <div className="hidden md:flex space-x-8 items-center">
+                <a href="#features" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
                   Features
                 </a>
-                <a href="#testimonials" className="text-white hover:text-gray-200 transition duration-150">
+                <a href="#testimonials" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
                   Testimonials
                 </a>
-                <a href="#jobs" className="text-white hover:text-gray-200 transition duration-150">
+                <a href="#jobs" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
                   Jobs
                 </a>
               </div>
             )}
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             {/* Desktop menu */}
             <div className="hidden md:block">
               {user ? (
                 <button
                   onClick={handleLogout}
-                  className="elegant-link"
+                  className="elegant-link text-lg border-b-2 border-transparent hover:border-navy"
                 >
                   Logout
                 </button>
               ) : (
                 <>
-                  <Link to="/login" className={`mr-4 ${isLandingPage ? 'text-white hover:text-gray-200' : 'elegant-link'} transition duration-150`}>
+                  <Link to="/login" className={`mr-6 ${isLandingPage ? 'text-white hover:text-gray-200 border-b-2 border-transparent hover:border-white' : 'elegant-link border-b-2 border-transparent hover:border-navy'} transition duration-150 text-lg`}>
                     Log in
                   </Link>
                   <Link to="/register">
-                    <Button color={isLandingPage ? "secondary" : "primary"} size="sm">
+                    <Button color={isLandingPage ? "secondary" : "primary"} size="lg">
                       Sign up
                     </Button>
                   </Link>
