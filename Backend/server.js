@@ -6,6 +6,21 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./db/config');
+const admin = require('firebase-admin');
+
+// Initialize Firebase Admin
+let firebaseInitialized = false;
+try {
+  const serviceAccount = require('./firebase-service-account.json');
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  firebaseInitialized = true;
+  console.log('Firebase Admin SDK initialized successfully');
+} catch (error) {
+  console.error('Error initializing Firebase Admin SDK:', error);
+  console.log('Please make sure firebase-service-account.json is present in the Backend directory');
+}
 
 // Import routes
 const jobsRoutes = require('./routes/jobs');
@@ -394,6 +409,20 @@ app.get('/api/resumes', async (req, res) => {
   } catch (error) {
     console.error('Error fetching resumes:', error);
     res.status(500).json({ error: 'Failed to fetch resumes' });
+  }
+});
+
+// Get total user count
+app.get('/api/users/count', async (req, res) => {
+  try {
+    if (!firebaseInitialized) {
+      return res.status(500).json({ error: 'Firebase Admin SDK not initialized' });
+    }
+    const listUsersResult = await admin.auth().listUsers();
+    res.json({ count: listUsersResult.users.length });
+  } catch (error) {
+    console.error('Error fetching user count:', error);
+    res.status(500).json({ error: 'Failed to fetch user count' });
   }
 });
 
