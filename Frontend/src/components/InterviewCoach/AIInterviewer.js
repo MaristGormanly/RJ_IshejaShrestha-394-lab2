@@ -40,6 +40,45 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
         // Define the number of questions based on interview duration
         const numQuestions = Math.max(3, Math.floor(interviewData.preferences.interviewDuration / 5));
         
+        // First pass: Generate role-specific context and question categories
+        const contextResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are an industry expert who deeply understands different professional roles and what makes a candidate successful. You will provide context for generating challenging and realistic interview questions.'
+              },
+              {
+                role: 'user',
+                content: `I need contextual information for interviewing a ${interviewData.experienceLevel} level ${interviewData.jobTitle} in the ${interviewData.industry} industry. 
+                
+What are:
+1. The 3-5 most important technical skills for this role
+2. The 3-5 most important soft skills for this role
+3. The 3 most challenging aspects of this role
+4. The 3 most common pitfalls for candidates interviewing for this role
+5. 3-4 categories of questions that would best evaluate a candidate for this role
+
+Format your response as a JSON object with these 5 keys.`
+              }
+            ],
+            temperature: 0.7,
+            response_format: { type: 'json_object' }
+          })
+        });
+        
+        let roleContext = {};
+        if (contextResponse.ok) {
+          const contextData = await contextResponse.json();
+          roleContext = JSON.parse(contextData.choices[0].message.content);
+        }
+        
         // Generate sample questions directly to avoid API issues
         const sampleQuestions = generateSampleQuestions(
           interviewData.jobTitle,
@@ -52,43 +91,59 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
         // If not in development, try the API call
         let generatedQuestions = sampleQuestions;
         
-        if (process.env.NODE_ENV !== 'development') {
-          try {
-            // Call OpenAI API to generate interview questions
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
-              },
-              body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                  {
-                    role: 'system',
-                    content: 'You are an expert interviewer. Generate interview questions with their associated skills to evaluate.'
-                  },
-                  {
-                    role: 'user',
-                    content: `Create ${numQuestions} ${interviewData.interviewType} interview questions for a ${interviewData.experienceLevel} level ${interviewData.jobTitle} position in the ${interviewData.industry} industry. Focus on evaluating these skills: ${interviewData.targetSkills.join(', ')}. The questions should be at ${interviewData.preferences.questionDifficulty} difficulty level. Format your response as a JSON object with a "questions" array. Each question should have an "id" (numeric), "question" (string), and "skill" (one of the specified skills).`
-                  }
-                ],
-                temperature: 0.7,
-                response_format: { type: 'json_object' }
-              })
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const parsedContent = JSON.parse(data.choices[0].message.content);
-              if (parsedContent.questions && Array.isArray(parsedContent.questions) && parsedContent.questions.length > 0) {
-                generatedQuestions = parsedContent.questions;
-              }
+        try {
+          // Second pass: Generate specific questions based on the context and the user's requirements
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                {
+                  role: 'system',
+                  content: `You are an expert interviewer who creates challenging, realistic, and role-specific questions. Your questions should deeply probe a candidate's knowledge and experience, requiring thoughtful and detailed responses.`
+                },
+                {
+                  role: 'user',
+                  content: `Create ${numQuestions} ${interviewData.interviewType} interview questions for a ${interviewData.experienceLevel} level ${interviewData.jobTitle} position in the ${interviewData.industry} industry. 
+                  
+Focus on evaluating these skills specified by the user: ${interviewData.targetSkills.join(', ')}.
+The questions should be at ${interviewData.preferences.questionDifficulty} difficulty level.
+
+Use this additional context for the role:
+${JSON.stringify(roleContext, null, 2)}
+
+Requirements:
+1. Make questions specific to the role and industry, not generic
+2. Include questions that test technical knowledge appropriate for the role
+3. Include questions that assess problem-solving in relevant scenarios
+4. Make the questions challenging enough to distinguish strong candidates
+5. Avoid yes/no questions - require detailed explanations
+6. For technical roles, include specific technical questions related to the field
+7. For management roles, include questions about leadership challenges
+8. For creative roles, include questions that evaluate innovative thinking
+
+Format your response as a JSON object with a "questions" array. Each question should have an "id" (numeric), "question" (string), and "skill" (one of the specified skills).`
+                }
+              ],
+              temperature: 0.7,
+              response_format: { type: 'json_object' }
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const parsedContent = JSON.parse(data.choices[0].message.content);
+            if (parsedContent.questions && Array.isArray(parsedContent.questions) && parsedContent.questions.length > 0) {
+              generatedQuestions = parsedContent.questions;
             }
-          } catch (apiError) {
-            console.warn('Error using OpenAI API, falling back to sample questions:', apiError);
-            // Continue with sample questions if API fails
           }
+        } catch (apiError) {
+          console.warn('Error using OpenAI API, falling back to sample questions:', apiError);
+          // Continue with sample questions if API fails
         }
         
         // Save the session and questions to Firestore
@@ -168,6 +223,93 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
 
   // Generate sample questions to use as fallback
   const generateSampleQuestions = (jobTitle, industry, interviewType, skills, numQuestions) => {
+    // Enhanced role-specific fallback questions
+    const roleSpecificQuestions = {
+      // Software Development roles
+      'software developer': [
+        "Walk me through your process for debugging a complex issue in a production environment.",
+        "Explain how you would design a scalable architecture for a high-traffic web application.",
+        "Describe a time when you had to optimize performance in an application. What approaches did you take?",
+        "How do you stay updated with the latest programming languages and frameworks?",
+        "Explain your approach to testing code and ensuring quality.",
+        "How would you refactor legacy code while minimizing disruption?",
+        "Describe a time when you had to make technical decisions that balanced speed of delivery with code quality."
+      ],
+      'frontend developer': [
+        "Describe your experience with state management in modern frontend frameworks.",
+        "How do you approach making web applications accessible?",
+        "Walk me through your process for optimizing the performance of a slow-loading web page.",
+        "How do you ensure cross-browser compatibility in your projects?",
+        "Explain your approach to responsive design and mobile-first development.",
+        "Describe a challenging UI component you built and how you approached it.",
+        "How do you debug rendering performance issues in a web application?"
+      ],
+      'backend developer': [
+        "Describe your experience designing and implementing APIs.",
+        "How do you approach database schema design for scalability?",
+        "Explain how you would handle high-traffic loads on a backend service.",
+        "Walk me through how you would implement authentication and authorization in a web service.",
+        "Describe your experience with microservices architecture.",
+        "How do you ensure the security of backend systems you develop?",
+        "Explain your approach to optimizing database queries for performance."
+      ],
+      
+      // Product Management roles
+      'product manager': [
+        "Describe your process for prioritizing features in a product roadmap.",
+        "How do you gather and incorporate user feedback into product decisions?",
+        "Tell me about a time when you had to make a difficult decision between competing product priorities.",
+        "How do you measure the success of a product feature after launch?",
+        "Describe a time when you had to convince stakeholders to pursue a particular product direction.",
+        "How do you balance technical constraints with business goals when planning a product?",
+        "Walk me through how you would validate a new product idea before committing resources to it."
+      ],
+      
+      // Marketing roles
+      'marketing manager': [
+        "Describe your approach to developing a comprehensive marketing strategy for a new product.",
+        "How do you measure and analyze the effectiveness of marketing campaigns?",
+        "Tell me about a marketing campaign you led that didn't meet expectations. What did you learn?",
+        "How do you identify and target specific customer segments?",
+        "Describe your experience with digital marketing channels and how you optimize them.",
+        "How do you approach content marketing to drive engagement and conversions?",
+        "Explain how you would allocate a marketing budget across different channels and initiatives."
+      ],
+      
+      // Design roles
+      'ux designer': [
+        "Walk me through your design process from requirements gathering to final deliverables.",
+        "How do you advocate for the user when facing business or technical constraints?",
+        "Describe a situation where you had to redesign an existing product feature based on user feedback.",
+        "How do you approach user research and incorporate findings into your designs?",
+        "Tell me about a time when you had to make design compromises. How did you handle it?",
+        "How do you ensure your designs are accessible to all users?",
+        "Describe how you collaborate with developers to ensure your designs are implemented correctly."
+      ],
+      
+      // Data Science roles
+      'data scientist': [
+        "Explain your approach to cleaning and preprocessing messy data sets.",
+        "How do you evaluate the performance of a machine learning model?",
+        "Describe a challenging data science project you worked on and how you approached it.",
+        "How do you communicate complex analytical findings to non-technical stakeholders?",
+        "Explain how you would handle a classification problem with highly imbalanced classes.",
+        "Describe your experience with feature engineering and selection.",
+        "How do you ensure that your data analysis is free from bias?"
+      ],
+      
+      // Leadership roles
+      'manager': [
+        "Describe your approach to managing a team through a difficult organizational change.",
+        "How do you handle performance issues with team members?",
+        "Tell me about a time when you had to make an unpopular decision as a leader.",
+        "How do you foster a culture of innovation and continuous improvement in your team?",
+        "Describe your approach to delegating tasks and responsibilities.",
+        "How do you handle conflicts between team members?",
+        "Explain your process for setting goals and measuring performance for your team."
+      ]
+    };
+
     // Generic questions by interview type
     const questionsByType = {
       behavioral: [
@@ -222,8 +364,37 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
       ]
     };
     
-    // Get appropriate questions based on interview type
-    const relevantQuestions = questionsByType[interviewType] || questionsByType.behavioral;
+    // Get appropriate questions based on role and interview type
+    const lowercaseJobTitle = jobTitle.toLowerCase();
+    const roleQuestions = [];
+    
+    // Find the most relevant role
+    for (const role in roleSpecificQuestions) {
+      if (lowercaseJobTitle.includes(role) || role.includes(lowercaseJobTitle)) {
+        roleQuestions.push(...roleSpecificQuestions[role]);
+        break;
+      }
+    }
+    
+    // If no specific role found, find by industry
+    if (roleQuestions.length === 0) {
+      if (industry.toLowerCase().includes('tech') || industry.toLowerCase().includes('software')) {
+        roleQuestions.push(...roleSpecificQuestions['software developer']);
+      } else if (industry.toLowerCase().includes('market')) {
+        roleQuestions.push(...roleSpecificQuestions['marketing manager']);
+      } else if (industry.toLowerCase().includes('design')) {
+        roleQuestions.push(...roleSpecificQuestions['ux designer']);
+      } else {
+        // Default to manager for any other industry
+        roleQuestions.push(...roleSpecificQuestions['manager']);
+      }
+    }
+    
+    // Add interview type questions to the mix
+    const relevantQuestions = [
+      ...roleQuestions,
+      ...(questionsByType[interviewType] || questionsByType.behavioral)
+    ];
     
     // Generate the questions array
     const result = [];
@@ -370,23 +541,154 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
     try {
       setIsLoading(true);
       
-      // Enhanced default feedback structure
+      // First pass: Analyze each answer (even without API)
+      const answerAnalysis = userAnswers.map(answer => {
+        const wordCount = answer.wordCount;
+        const duration = answer.duration;
+        const hasDetails = wordCount > 50;
+        const isStructured = answer.answer.split('.').length > 2; // Simple check for multiple sentences
+        const mentionsExamples = answer.answer.toLowerCase().includes('example') || 
+                                answer.answer.toLowerCase().includes('instance') ||
+                                answer.answer.toLowerCase().includes('time when');
+        
+        const keyPhrases = [
+          // Generic professional phrases
+          'team', 'collaborate', 'challenge', 'solution', 'improve', 'develop', 'strategy', 'result',
+          'success', 'learn', 'innovation', 'quality', 'problem', 'skill', 'experience',
+          // Role-specific keywords based on job title
+          ...extractRoleKeywords(interviewData.jobTitle, interviewData.industry)
+        ];
+        
+        // Count how many key phrases are used
+        const keyPhraseCount = keyPhrases.filter(phrase => 
+          answer.answer.toLowerCase().includes(phrase.toLowerCase())
+        ).length;
+        
+        // Simple quality score calculation
+        const qualityScore = Math.min(10, Math.max(1, Math.floor(
+          (hasDetails ? 2 : 0) + 
+          (isStructured ? 2 : 0) + 
+          (mentionsExamples ? 2 : 0) + 
+          (Math.min(4, keyPhraseCount / 2)) +
+          (wordCount > 30 && wordCount < 200 ? 2 : 0)
+        )));
+        
+        return {
+          questionId: answer.questionId,
+          question: answer.question,
+          skill: answer.skill,
+          wordCount: wordCount,
+          duration: duration,
+          qualityScore: qualityScore,
+          strengths: [
+            ...(hasDetails ? ["Provided sufficient detail"] : []),
+            ...(isStructured ? ["Had good structure"] : []),
+            ...(mentionsExamples ? ["Used specific examples"] : []),
+            ...(keyPhraseCount > 3 ? ["Used relevant professional terminology"] : []),
+            ...(wordCount >= 100 && wordCount <= 180 ? ["Good answer length"] : [])
+          ],
+          weaknesses: [
+            ...(!hasDetails ? ["Lacked necessary details"] : []),
+            ...(!isStructured ? ["Answer was not well structured"] : []),
+            ...(!mentionsExamples ? ["Did not provide concrete examples"] : []),
+            ...(keyPhraseCount < 2 ? ["Did not use relevant professional terminology"] : []),
+            ...(wordCount < 30 ? ["Answer was too brief"] : []),
+            ...(wordCount > 200 ? ["Answer was excessively long"] : []),
+            ...(duration < 15 ? ["Responded too quickly without sufficient thought"] : []),
+            ...(duration > 180 ? ["Took too long to articulate response"] : [])
+          ],
+          demonstratesSkill: qualityScore >= 6
+        };
+      });
+      
+      // Second pass: Generate comprehensive feedback based on the analysis
+      const skillScoresMap = {};
+      interviewData.targetSkills.forEach(skill => {
+        const relevantAnswers = answerAnalysis.filter(a => a.skill === skill);
+        const avgScore = relevantAnswers.length > 0 
+          ? relevantAnswers.reduce((sum, a) => sum + a.qualityScore, 0) / relevantAnswers.length
+          : 5; // Default score
+        skillScoresMap[skill] = Math.round(avgScore);
+      });
+      
+      // Calculate overall score based on skill scores and metrics
+      const skillScoresAvg = Object.values(skillScoresMap).reduce((sum, score) => sum + score, 0) / 
+                         Object.values(skillScoresMap).length;
+      
+      // Adjust score based on interview metrics
+      const timingPenalty = totalInterviewTime < interviewData.preferences.interviewDuration * 0.6 ? -1 : 
+                           totalInterviewTime > interviewData.preferences.interviewDuration * 1.4 ? -0.5 : 0;
+      
+      const shortAnswerPenalty = shortAnswers > userAnswers.length * 0.3 ? -1 : 0;
+      
+      const overallScore = Math.max(1, Math.min(10, Math.round(skillScoresAvg + timingPenalty + shortAnswerPenalty)));
+      
+      // Identify common strengths and weaknesses
+      const allStrengths = answerAnalysis.flatMap(a => a.strengths);
+      const strengthsFrequency = {};
+      allStrengths.forEach(s => {
+        strengthsFrequency[s] = (strengthsFrequency[s] || 0) + 1;
+      });
+      
+      const allWeaknesses = answerAnalysis.flatMap(a => a.weaknesses);
+      const weaknessesFrequency = {};
+      allWeaknesses.forEach(w => {
+        weaknessesFrequency[w] = (weaknessesFrequency[w] || 0) + 1;
+      });
+      
+      // Select top strengths and weaknesses
+      const topStrengths = Object.entries(strengthsFrequency)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([strength]) => strength);
+      
+      const topWeaknesses = Object.entries(weaknessesFrequency)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([weakness]) => weakness);
+      
+      // Generate suggestions based on weaknesses
+      const generalSuggestions = [
+        "Practice more concise and focused responses to common questions",
+        "Research the specific requirements of your target role",
+        "Record yourself and listen to identify verbal tics or filler words"
+      ];
+      
+      const weaknessSuggestions = {
+        "Lacked necessary details": "For each answer, include at least one specific detail or metric that demonstrates your impact",
+        "Answer was not well structured": "Structure your answers using the STAR method (Situation, Task, Action, Result)",
+        "Did not provide concrete examples": "Prepare 5-7 strong examples from your experience that can be adapted to different questions",
+        "Did not use relevant professional terminology": `Research and use industry-specific terminology for ${interviewData.industry} roles`,
+        "Answer was too brief": "Aim for 60-90 second responses that include context, actions, and results",
+        "Answer was excessively long": "Practice timing your responses and focus on the most relevant aspects of your experience",
+        "Responded too quickly without sufficient thought": "Take a moment to gather your thoughts before answering challenging questions",
+        "Took too long to articulate response": "Prepare and practice concise explanations of complex topics in advance"
+      };
+      
+      const customSuggestions = topWeaknesses.map(weakness => 
+        weaknessSuggestions[weakness] || `Work on improving areas where you showed weakness: ${weakness}`
+      );
+      
+      // Generate role-specific advice
+      const roleSpecificAdvice = generateRoleSpecificAdvice(
+        interviewData.jobTitle, 
+        interviewData.industry, 
+        interviewData.experienceLevel,
+        skillScoresMap
+      );
+      
+      // Enhanced default feedback structure with personalized insights
       let feedback = {
-        overallScore: 6, // Starting with a tougher baseline score
-        skillScores: {},
-        strengths: [
-          "You completed the interview and addressed all questions"
-        ],
-        areasForImprovement: [
+        overallScore,
+        skillScores: skillScoresMap,
+        strengths: topStrengths.length > 0 ? topStrengths : ["You completed the interview and addressed all questions"],
+        areasForImprovement: topWeaknesses.length > 0 ? topWeaknesses : [
           "Your answers need to be more specific and detailed",
           "Provide more concrete examples to support your claims",
           "Structure your responses using the STAR method for clarity"
         ],
-        suggestions: [
-          "Practice more concise and focused responses to common questions",
-          "Research the specific requirements of your target role",
-          "Record yourself and listen to identify verbal tics or filler words"
-        ],
+        suggestions: [...customSuggestions, ...generalSuggestions].slice(0, 5),
+        roleSpecificAdvice,
         interviewMetrics: {
           totalDuration: totalInterviewTime.toFixed(1), // in minutes
           expectedDuration: interviewData.preferences.interviewDuration,
@@ -399,26 +701,54 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
         timeAssessment: assessInterviewTime(totalInterviewTime, interviewData.preferences.interviewDuration, averageAnswerTime)
       };
       
-      // Add more critical skill scores
-      interviewData.targetSkills.forEach(skill => {
-        feedback.skillScores[skill] = Math.min(7, Math.floor(Math.random() * 4) + 4); // More challenging scores between 4-7
-      });
-      
-      // Add time-based critique if interview was too short
-      if (totalInterviewTime < interviewData.preferences.interviewDuration * 0.6) {
-        feedback.areasForImprovement.unshift("Your interview was much shorter than expected, suggesting your answers lacked sufficient detail");
-        feedback.suggestions.unshift("Aim to spend more time elaborating on key points and providing evidence for your claims");
-      }
-      
-      // Add critique for very short answers
-      if (shortAnswers > userAnswers.length * 0.3) {
-        feedback.areasForImprovement.push("Several of your answers were too brief and lacked necessary detail");
-        feedback.suggestions.push("For each point you make, back it up with a specific example");
-      }
-      
       // Try to get real feedback from OpenAI if not in development
       if (process.env.NODE_ENV !== 'development' && userAnswers.length > 0) {
         try {
+          // First pass: Analyze the content of the answers
+          const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [
+                {
+                  role: 'system',
+                  content: `You are an expert at analyzing interview responses for ${interviewData.industry} roles. Provide a detailed analysis of each answer, focusing on substance, relevance, and depth.`
+                },
+                {
+                  role: 'user',
+                  content: `Analyze these interview responses for a ${interviewData.jobTitle} position (${interviewData.experienceLevel} level).
+                  
+For each answer, provide:
+1. A concise evaluation of answer quality (1-10 scale)
+2. The key strengths of the answer
+3. The key weaknesses of the answer
+4. Whether the answer demonstrates the skill it was intended to assess
+
+Interview content:
+${userAnswers.map(a => `Q: ${a.question}\nA: ${a.answer}\nSkill: ${a.skill}\nDuration: ${a.duration} seconds\nWord count: ${a.wordCount}`).join('\n\n')}
+
+Format your response as a JSON object with an "answerAnalysis" array containing one object per answer.`
+                }
+              ],
+              temperature: 0.7,
+              response_format: { type: 'json_object' }
+            })
+          });
+          
+          let aiAnswerAnalysis = [];
+          if (analysisResponse.ok) {
+            const analysisData = await analysisResponse.json();
+            const parsedAnalysis = JSON.parse(analysisData.choices[0].message.content);
+            if (parsedAnalysis.answerAnalysis && Array.isArray(parsedAnalysis.answerAnalysis)) {
+              aiAnswerAnalysis = parsedAnalysis.answerAnalysis;
+            }
+          }
+
+          // Second pass: Generate comprehensive feedback based on the analysis
           const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -434,22 +764,30 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
                 },
                 {
                   role: 'user',
-                  content: `Analyze these interview answers for a ${interviewData.jobTitle} position (${interviewData.experienceLevel} level) and provide detailed, critical feedback focused on these skills: ${interviewData.targetSkills.join(', ')}. 
+                  content: `Based on this detailed analysis of interview answers for a ${interviewData.jobTitle} position (${interviewData.experienceLevel} level), provide comprehensive feedback focused on these skills: ${interviewData.targetSkills.join(', ')}.
                   
 The interview was expected to take ${interviewData.preferences.interviewDuration} minutes but actually took ${totalInterviewTime.toFixed(1)} minutes.
 The average answer took ${averageAnswerTime.toFixed(1)} seconds.
 ${shortAnswers} answers were very brief (under 30 words).
 ${longAnswers} answers were overly long (over 200 words).
 
-Interview content:
-${userAnswers.map(a => `Q: ${a.question}\nA: ${a.answer}\nSkill: ${a.skill}\nDuration: ${a.duration} seconds\nWord count: ${a.wordCount}`).join('\n\n')}
+Here's the detailed analysis of each answer:
+${JSON.stringify(aiAnswerAnalysis, null, 2)}
 
-Be honest and direct about weaknesses. Don't sugarcoat your critique. Return a JSON object with these fields: 
+Provide feedback that is:
+1. Specific to the ${interviewData.jobTitle} role in the ${interviewData.industry} industry
+2. Customized for someone at the ${interviewData.experienceLevel} experience level
+3. Honest about strengths and weaknesses, with a focus on improvement
+4. Actionable with clear next steps
+5. Based on industry expectations for this role
+
+Return a JSON object with these fields: 
 "overallScore" (1-10, be strict and realistic),
 "skillScores" (object mapping each skill to a score 1-10),
 "strengths" (array of specific strengths, limit to 2-3 if few strengths exist),
 "areasForImprovement" (array of clear weaknesses, be specific and direct), 
-"suggestions" (array of actionable recommendations for improvement), and 
+"suggestions" (array of actionable recommendations for improvement),
+"roleSpecificAdvice" (specific advice for advancing in this particular role), and
 "timeAssessment" (specific critique of interview timing and answer length).`
                 }
               ],
@@ -545,6 +883,127 @@ Be honest and direct about weaknesses. Don't sugarcoat your critique. Return a J
     }
     
     return assessment;
+  };
+
+  // Helper function to extract relevant keywords for a specific role
+  const extractRoleKeywords = (jobTitle, industry) => {
+    const title = jobTitle.toLowerCase();
+    const ind = industry.toLowerCase();
+    
+    // Generic professional keywords first
+    const keywords = ['communicate', 'stakeholder', 'manage', 'lead', 'execute'];
+    
+    // Software Development
+    if (title.includes('developer') || title.includes('engineer') || title.includes('programmer') || 
+        ind.includes('software') || ind.includes('tech')) {
+      return [...keywords, 'code', 'algorithm', 'test', 'debug', 'architecture', 'api', 'framework', 
+              'scalable', 'optimize', 'git', 'agile', 'sprint', 'technical', 'solution'];
+    }
+    
+    // Product Management
+    if (title.includes('product') || title.includes('pm')) {
+      return [...keywords, 'roadmap', 'user', 'customer', 'feature', 'prioritize', 'sprint', 
+              'backlog', 'vision', 'requirement', 'metric', 'kpi', 'data-driven', 'mvp'];
+    }
+    
+    // Marketing
+    if (title.includes('market') || ind.includes('market')) {
+      return [...keywords, 'brand', 'campaign', 'roi', 'segment', 'channel', 'conversion', 
+              'content', 'digital', 'social media', 'analytics', 'target', 'audience'];
+    }
+    
+    // Design
+    if (title.includes('design') || title.includes('ux') || title.includes('ui')) {
+      return [...keywords, 'user', 'wireframe', 'prototype', 'usability', 'research', 
+              'interface', 'experience', 'journey', 'persona', 'accessibility'];
+    }
+    
+    // Data Science
+    if (title.includes('data') || title.includes('analyst') || title.includes('scientist')) {
+      return [...keywords, 'model', 'algorithm', 'analysis', 'visualization', 'statistics', 
+              'machine learning', 'python', 'sql', 'regression', 'dataset', 'hypothesis'];
+    }
+    
+    // Leadership/Management
+    if (title.includes('manager') || title.includes('director') || title.includes('lead')) {
+      return [...keywords, 'team', 'strategy', 'kpi', 'goal', 'mentor', 'delegate', 
+              'budget', 'vision', 'process', 'performance', 'resource', 'growth'];
+    }
+    
+    return keywords; // Return generic keywords if no specific match
+  };
+  
+  // Helper function to generate role-specific advice based on job title and industry
+  const generateRoleSpecificAdvice = (jobTitle, industry, experienceLevel, skillScores) => {
+    const title = jobTitle.toLowerCase();
+    const ind = industry.toLowerCase();
+    const level = experienceLevel.toLowerCase();
+    
+    // Identify the weakest and strongest skills
+    const skillEntries = Object.entries(skillScores);
+    const weakestSkill = skillEntries.sort((a, b) => a[1] - b[1])[0]?.[0];
+    const strongestSkill = skillEntries.sort((a, b) => b[1] - a[1])[0]?.[0];
+    
+    let advice = '';
+    
+    // Software Development
+    if (title.includes('developer') || title.includes('engineer') || title.includes('programmer') || 
+        ind.includes('software') || ind.includes('tech')) {
+      
+      advice = `As a ${experienceLevel} ${jobTitle}, focus on building a strong portfolio of work that demonstrates your technical abilities. `;
+      
+      if (level.includes('entry') || level.includes('junior')) {
+        advice += `Contribute to open source projects to gain practical experience. Focus on mastering fundamental algorithms and data structures, and become proficient with at least one major framework. Your strongest skill appears to be ${strongestSkill}, while you should work more on ${weakestSkill}.`;
+      } else if (level.includes('mid') || level.includes('senior')) {
+        advice += `Work on architecting complete solutions and mentoring junior team members. Make sure you can clearly articulate technical decisions and trade-offs. Consider specializing in high-demand areas like cloud infrastructure, security, or performance optimization. Continue building on your strength in ${strongestSkill}, while addressing gaps in ${weakestSkill}.`;
+      }
+    }
+    
+    // Product Management
+    else if (title.includes('product') || title.includes('pm')) {
+      advice = `For a ${experienceLevel} Product Manager in ${industry}, success depends on balancing user needs with business objectives. `;
+      
+      if (level.includes('entry') || level.includes('junior')) {
+        advice += `Build expertise in user research methods and develop strong analytical skills for data-driven decision making. Learn to write clear, detailed user stories and requirements. You demonstrate good ${strongestSkill}, but need to improve your ${weakestSkill}.`;
+      } else if (level.includes('mid') || level.includes('senior')) {
+        advice += `Focus on developing strategic product vision and strengthening cross-functional leadership. Work on quantifying product impact through key metrics and demonstrate your ability to prioritize features based on business value. Continue leveraging your strong ${strongestSkill}, while working on your ${weakestSkill} to become a more well-rounded product leader.`;
+      }
+    }
+    
+    // Marketing
+    else if (title.includes('market') || ind.includes('market')) {
+      advice = `As a ${experienceLevel} marketing professional, staying current with digital trends is essential. `;
+      
+      if (level.includes('entry') || level.includes('junior')) {
+        advice += `Develop skills across various marketing channels and learn to analyze campaign metrics. Build a portfolio of marketing materials and campaigns you've contributed to. Your ${strongestSkill} is a good foundation, but you should focus more on developing your ${weakestSkill}.`;
+      } else if (level.includes('mid') || level.includes('senior')) {
+        advice += `Demonstrate your ability to develop comprehensive marketing strategies and show measurable results from past campaigns. Be prepared to discuss ROI and how you've optimized marketing spend. Your strength in ${strongestSkill} is valuable, but improving your ${weakestSkill} will make you more effective.`;
+      }
+    }
+    
+    // Design
+    else if (title.includes('design') || title.includes('ux') || title.includes('ui')) {
+      advice = `For a ${experienceLevel} designer, balancing creativity with business requirements is key. `;
+      
+      if (level.includes('entry') || level.includes('junior')) {
+        advice += `Build a diverse portfolio that showcases your design process, not just final outputs. Learn the fundamentals of user research and usability testing. Your ${strongestSkill} shows promise, but you need considerable improvement in ${weakestSkill}.`;
+      } else if (level.includes('mid') || level.includes('senior')) {
+        advice += `Focus on how your design decisions impact business metrics and user satisfaction. Be prepared to lead design reviews and justify your choices with research and data. Continue leveraging your excellent ${strongestSkill}, while addressing your weakness in ${weakestSkill}.`;
+      }
+    }
+    
+    // Default for other roles
+    else {
+      advice = `For advancing in your ${jobTitle} career in the ${industry} industry, focus on building both technical expertise and soft skills. `;
+      
+      if (level.includes('entry') || level.includes('junior')) {
+        advice += `Seek mentorship from more experienced professionals and take on projects that stretch your abilities. Your ${strongestSkill} is a good start, but work on improving your ${weakestSkill}.`;
+      } else if (level.includes('mid') || level.includes('senior')) {
+        advice += `Look for opportunities to lead initiatives and demonstrate strategic thinking. Quantify your achievements with specific metrics where possible. Your strength in ${strongestSkill} is valuable, but addressing your ${weakestSkill} will make you more effective.`;
+      }
+    }
+    
+    return advice;
   };
 
   const renderAvatar = () => {
