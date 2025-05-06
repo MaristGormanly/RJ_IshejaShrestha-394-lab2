@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import axios from 'axios';
+import LandingAnimation from '../components/LandingAnimation';
 
 const LandingPage = () => {
   const [userCount, setUserCount] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAnimation, setShowAnimation] = useState(true);
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -22,8 +24,13 @@ const LandingPage = () => {
     fetchUserCount();
   }, []);
 
+  const handleAnimationComplete = () => {
+    setShowAnimation(false);
+  };
+
   return (
     <div className="landing-page">
+      {showAnimation && <LandingAnimation onAnimationComplete={handleAnimationComplete} />}
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-navy to-blue-600 text-white py-20">
         <div className="container mx-auto px-4">

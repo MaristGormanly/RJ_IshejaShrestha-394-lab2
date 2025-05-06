@@ -1,0 +1,88 @@
+.landing-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.landing-animation.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.plane-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.plane {
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 80px;
+  height: 80px;
+  color: #1a365d;
+  transform: rotate(-45deg) scaleX(-1);
+  animation: flyIn 2s ease-in-out forwards;
+}
+
+.runway {
+  position: absolute;
+  bottom: 40%;
+  left: 50%;
+  width: 200px;
+  height: 3px;
+  background: #1a365d;
+  transform: translateX(-50%) scaleX(0);
+  animation: runwayAppear 0.5s ease-out forwards;
+  animation-delay: 1.5s;
+}
+
+.landed-text {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 4rem;
+  font-weight: bold;
+  color: #1a365d;
+  opacity: 0;
+  transition: all 0.5s ease-out;
+}
+
+.landed-text.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+@keyframes flyIn {
+  0% {
+    top: -100px;
+    right: -100px;
+    transform: rotate(-45deg) scaleX(-1);
+  }
+  100% {
+    top: 40%;
+    right: 50%;
+    transform: translateX(50%) rotate(0deg) scaleX(-1);
+  }
+}
+
+@keyframes runwayAppear {
+  from {
+    transform: translateX(-50%) scaleX(0);
+  }
+  to {
+    transform: translateX(-50%) scaleX(1);
+  }
+} 
