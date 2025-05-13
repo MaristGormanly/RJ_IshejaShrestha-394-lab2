@@ -52,8 +52,6 @@ function App() {
     );
   }
 
-  const isLandingPage = !user && window.location.pathname === '/';
-
   return (
     <div className={`min-h-screen bg-offwhite text-gray-800 ${isLandingPage ? 'landing-layout' : ''}`}>
       <Navbar user={user} />
