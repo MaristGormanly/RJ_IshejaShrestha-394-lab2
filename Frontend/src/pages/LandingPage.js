@@ -128,7 +128,7 @@ const LandingPage = () => {
       <section id="features" className="py-16 bg-offwhite">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 fade-up">
-            <h2 className="text-3xl font-bold text-navy mb-4 font-serif">Why Choose Landed?</h2>
+            <h2 className="text-3xl font-bold text-navy mb-4 font-serif section-heading">Why Choose Landed?</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               We combine AI-powered tools with real job listings to help you land your dream job faster.
             </p>
@@ -184,11 +184,11 @@ const LandingPage = () => {
       </section>
 
       {/* Job Search Section */}
-      <section className="py-16 bg-white">
+      <section id="jobs" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10 fade-up">
-              <h2 className="text-3xl font-bold text-navy mb-4 font-serif">Real-Time Job Search</h2>
+              <h2 className="text-3xl font-bold text-navy mb-4 font-serif section-heading">Real-Time Job Search</h2>
               <p className="text-gray-600 mb-6">
                 Search through thousands of job listings from top companies around the world. 
                 Our platform connects to real-time job databases to ensure you see the most 
@@ -230,10 +230,10 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-navy text-white">
+      <section id="testimonials" className="py-16 bg-navy text-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 fade-up">
-            <h2 className="text-3xl font-bold mb-4 font-serif">What Our Users Say</h2>
+            <h2 className="text-3xl font-bold mb-4 font-serif section-heading">What Our Users Say</h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
               Join thousands of professionals who have found their dream jobs using our platform.
             </p>

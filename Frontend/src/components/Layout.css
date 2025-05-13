@@ -1,0 +1,39 @@
+/* Layout styles to handle fixed navbar and content positioning */
+
+/* Main content container for pages that need padding for fixed navbar */
+.page-container {
+  padding-top: 6rem; /* Provides space for the navbar */
+}
+
+/* Adjustments for different screen sizes */
+@media (max-width: 768px) {
+  .page-container {
+    padding-top: 5rem; /* Slightly less padding on mobile */
+  }
+}
+
+/* Container for landing page */
+.landing-layout {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+/* Used for landing page where navbar is transparent and content should be flush with top */
+.landing-page {
+  padding-top: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* For section headings that might be hidden by navbar */
+.section-heading {
+  scroll-margin-top: 5rem; /* When navigating to anchors, ensures they're visible below navbar */
+}
+
+/* Ensure login and register pages have proper spacing */
+.auth-page {
+  padding-top: 1rem;
+} 

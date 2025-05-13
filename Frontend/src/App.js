@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase/config';
 
@@ -21,9 +21,16 @@ import LandingPage from './pages/LandingPage';
 import Navbar from './components/Navbar';
 import AuthRoute from './components/AuthRoute';
 
+// Styles
+import './components/Layout.css';
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  
+  // Determine if current route is landing page
+  const isLandingPage = !user && location.pathname === '/';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -46,23 +53,29 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-offwhite text-gray-800">
+    <div className={`min-h-screen bg-offwhite text-gray-800 ${isLandingPage ? 'landing-layout' : ''}`}>
       <Navbar user={user} />
-      <div className={`${!user && window.location.pathname === '/' ? '' : 'container mx-auto px-4 py-8'}`}>
+      {isLandingPage ? (
         <Routes>
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-          <Route path="/" element={user ? <AuthRoute user={user}><Dashboard /></AuthRoute> : <LandingPage />} />
-          <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
-          <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
-          <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
-          <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
-          <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
-          <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />
-          <Route path="/interview-coach" element={<AuthRoute user={user}><InterviewCoach /></AuthRoute>} />
-          <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
+          <Route path="/" element={<LandingPage />} />
         </Routes>
-      </div>
+      ) : (
+        <div className="container mx-auto px-4 page-container">
+          <Routes>
+            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+            <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+            <Route path="/" element={user ? <AuthRoute user={user}><Dashboard /></AuthRoute> : <Navigate to="/login" />} />
+            <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
+            <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
+            <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
+            <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
+            <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
+            <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />
+            <Route path="/interview-coach" element={<AuthRoute user={user}><InterviewCoach /></AuthRoute>} />
+            <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
+          </Routes>
+        </div>
+      )}
     </div>
   );
 }

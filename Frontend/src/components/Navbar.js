@@ -11,6 +11,11 @@ const Navbar = ({ user }) => {
   const [scrolled, setScrolled] = useState(false);
   const isLandingPage = !user && location.pathname === '/';
 
+  // Reset scroll state when route changes
+  useEffect(() => {
+    setScrolled(window.scrollY > 10);
+  }, [location.pathname, user]);
+
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
@@ -25,9 +30,11 @@ const Navbar = ({ user }) => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      navigate('/login');
+      // Close mobile menu before logout to prevent state issues
       setMobileMenuOpen(false);
+      await signOut(auth);
+      // Navigate after state is cleared
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
