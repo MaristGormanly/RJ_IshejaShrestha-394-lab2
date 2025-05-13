@@ -45,10 +45,12 @@ function App() {
     );
   }
 
+  const isLandingPage = !user && window.location.pathname === '/';
+
   return (
     <div className="min-h-screen bg-offwhite text-gray-800">
       <Navbar user={user} />
-      <div className={`${!user && window.location.pathname === '/' ? '' : 'container mx-auto px-4 py-8'}`}>
+      <div className={`${isLandingPage ? '' : 'container mx-auto px-4 py-8 pt-24'}`}>
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
           <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
