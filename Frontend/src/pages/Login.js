@@ -35,7 +35,7 @@ const Login = () => {
   );
 
   return (
-    <div className="max-w-md mx-auto auth-page">
+    <div className="max-w-md mx-auto mt-10">
       <div className="card p-8">
         <h1 className="text-3xl font-serif font-bold mb-2 text-navy text-center">Welcome Back</h1>
         <p className="text-gray-600 text-center mb-6">Sign in to continue to your account</p>

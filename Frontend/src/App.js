@@ -52,9 +52,26 @@ function App() {
     );
   }
 
+  const isLandingPage = !user && window.location.pathname === '/';
+
   return (
     <div className={`min-h-screen bg-offwhite text-gray-800 ${isLandingPage ? 'landing-layout' : ''}`}>
       <Navbar user={user} />
+      <div className={`${isLandingPage ? '' : 'container mx-auto px-4 py-8 pt-24'}`}>
+        <Routes>
+          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+          <Route path="/" element={user ? <AuthRoute user={user}><Dashboard /></AuthRoute> : <LandingPage />} />
+          <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
+          <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
+          <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
+          <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
+          <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
+          <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />
+          <Route path="/interview-coach" element={<AuthRoute user={user}><InterviewCoach /></AuthRoute>} />
+          <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
+        </Routes>
+      </div>
       {isLandingPage ? (
         <Routes>
           <Route path="/" element={<LandingPage />} />
