@@ -3,11 +3,15 @@ import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 import axios from 'axios';
 import LandingAnimation from '../components/LandingAnimation';
+import useScrollAnimation from '../hooks/useScrollAnimation';
+import '../components/ScrollAnimation.css';
 
 const LandingPage = () => {
   const [userCount, setUserCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAnimation, setShowAnimation] = useState(true);
+
+  useScrollAnimation();
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -32,29 +36,32 @@ const LandingPage = () => {
     <div className="landing-page">
       {showAnimation && <LandingAnimation onAnimationComplete={handleAnimationComplete} />}
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-navy to-blue-600 text-white py-20">
+      <section className="bg-gradient-to-br from-navy to-blue-600 text-white py-24 md:py-32">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl font-bold font-serif mb-4 text-white">Land Your Dream Job With AI-Powered Tools</h1>
-              <p className="text-xl mb-8 text-gray-100">
-                Streamline your job search with AI tools that help you stand out and create tailored resumes, 
-                write compelling cover letters, and prepare for interviews.
+          <div className="flex flex-col-reverse md:flex-row items-center md:space-x-12">
+            {/* Text Content */}
+            <div className="md:w-1/2 text-center md:text-left">
+              <h1 className="text-5xl md:text-6xl font-extrabold font-serif mb-6 leading-tight drop-shadow-lg text-white">
+                Land Your Dream Job<br className="hidden md:block" /> With AI-Powered Tools
+              </h1>
+              <p className="text-lg md:text-2xl mb-10 text-gray-100 font-light">
+                Streamline your job search with AI tools that help you stand out, create tailored resumes, write compelling cover letters, and prepare for interviews.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex flex-col md:flex-row md:space-x-6 space-y-4 md:space-y-0 justify-center md:justify-start">
                 <Link to="/register">
-                  <Button color="secondary" size="lg">Get Started Free</Button>
+                  <Button color="secondary" size="lg" className="shadow-lg">Get Started Free</Button>
                 </Link>
-                <a href="#features" className="inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-white hover:bg-opacity-10 transition">
+                <a href="#features" className="inline-flex items-center justify-center px-8 py-3 border border-white text-base font-semibold rounded-md text-white hover:bg-white hover:bg-opacity-10 transition shadow-lg">
                   Learn More
                 </a>
               </div>
             </div>
-            <div className="md:w-1/2 md:pl-10">
-              <img 
-                src="/images/landingpageimg.png" 
-                alt="Woman getting hired" 
-                className="rounded-lg shadow-xl w-full object-cover h-80 md:h-96" 
+            {/* Image */}
+            <div className="md:w-1/2 mb-10 md:mb-0 flex justify-center">
+              <img
+                src="/images/landingpageimg.png"
+                alt="Woman getting hired"
+                className="rounded-2xl shadow-2xl w-full max-w-md object-cover h-80 md:h-96 border-4 border-white border-opacity-20"
               />
             </div>
           </div>
@@ -64,24 +71,54 @@ const LandingPage = () => {
       {/* Stats Section */}
       <section className="py-12 bg-gradient-to-r from-gray-50 to-white shadow-md">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-              <p className="text-4xl font-bold text-navy mb-2">93%</p>
-              <p className="text-gray-600">Success Rate</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-              <p className="text-4xl font-bold text-navy mb-2">
-                {loading ? '...' : userCount ? `${userCount}+` : '5k+'}
-              </p>
-              <p className="text-gray-600">Happy Users</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-              <p className="text-4xl font-bold text-navy mb-2">250+</p>
-              <p className="text-gray-600">Companies Hiring</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-              <p className="text-4xl font-bold text-navy mb-2">100K+</p>
-              <p className="text-gray-600">Job Listings</p>
+          <div className="stats-container">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div className="stat-card">
+                <div className="stat-card-inner">
+                  <div className="stat-card-front">
+                    <p className="stat-number">93%</p>
+                    <p className="stat-label">Success Rate</p>
+                  </div>
+                  <div className="stat-card-back">
+                    <p className="stat-label">Our users achieve their career goals with our AI-powered tools</p>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-inner">
+                  <div className="stat-card-front">
+                    <p className="stat-number">
+                      {loading ? '...' : userCount ? `${userCount}+` : '5k+'}
+                    </p>
+                    <p className="stat-label">Happy Users</p>
+                  </div>
+                  <div className="stat-card-back">
+                    <p className="stat-label">Join our growing community of successful professionals</p>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-inner">
+                  <div className="stat-card-front">
+                    <p className="stat-number">250+</p>
+                    <p className="stat-label">Companies Hiring</p>
+                  </div>
+                  <div className="stat-card-back">
+                    <p className="stat-label">Partner companies actively recruiting through our platform</p>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-card-inner">
+                  <div className="stat-card-front">
+                    <p className="stat-number">100K+</p>
+                    <p className="stat-label">Job Listings</p>
+                  </div>
+                  <div className="stat-card-back">
+                    <p className="stat-label">Active job opportunities waiting for you to discover</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -90,14 +127,14 @@ const LandingPage = () => {
       {/* Features Section */}
       <section id="features" className="py-16 bg-offwhite">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 fade-up">
             <h2 className="text-3xl font-bold text-navy mb-4 font-serif">Why Choose Landed?</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               We combine AI-powered tools with real job listings to help you land your dream job faster.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 stagger-children">
             <div className="bg-white p-8 rounded-lg shadow-md">
               <div className="inline-block p-4 bg-blue-100 rounded-lg text-navy mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -150,7 +187,7 @@ const LandingPage = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
+            <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10 fade-up">
               <h2 className="text-3xl font-bold text-navy mb-4 font-serif">Real-Time Job Search</h2>
               <p className="text-gray-600 mb-6">
                 Search through thousands of job listings from top companies around the world. 
@@ -181,8 +218,8 @@ const LandingPage = () => {
                 <Button color="primary">Start Searching Now</Button>
               </Link>
             </div>
-            <div className="md:w-1/2">
-            <img 
+            <div className="md:w-1/2 fade-up">
+              <img 
                 src="/images/landingimg2.png" 
                 alt="Job application process" 
                 className="rounded-lg shadow-xl w-full object-cover h-80 md:h-96" 
@@ -195,14 +232,14 @@ const LandingPage = () => {
       {/* Testimonials Section */}
       <section className="py-16 bg-navy text-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 fade-up">
             <h2 className="text-3xl font-bold mb-4 font-serif">What Our Users Say</h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
               Join thousands of professionals who have found their dream jobs using our platform.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 stagger-children">
             <div className="bg-white text-gray-800 p-8 rounded-lg shadow-md relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center">
                 <svg className="w-5 h-5 text-navy" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -268,7 +305,7 @@ const LandingPage = () => {
 
       {/* CTA Section */}
       <section className="py-24 bg-white text-center relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-4 relative z-10 fade-up">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 font-serif text-center text-navy">Ready to Land Your Dream Job?</h2>
           <p className="text-xl md:text-2xl mb-12 text-gray-600 max-w-3xl mx-auto">
             Join thousands of professionals who have accelerated their job search with our AI-powered tools.
@@ -290,7 +327,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 stagger-children">
             <div>
               <h3 className="text-xl font-bold mb-4">Landed</h3>
               <p className="text-gray-400">

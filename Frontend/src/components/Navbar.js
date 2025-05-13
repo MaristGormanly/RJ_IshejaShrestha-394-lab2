@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
@@ -8,7 +8,20 @@ const Navbar = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const isLandingPage = !user && location.pathname === '/';
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
 
   const handleLogout = async () => {
     try {
@@ -25,26 +38,33 @@ const Navbar = ({ user }) => {
   };
 
   return (
-    <nav className={`${isLandingPage ? 'bg-transparent absolute w-full z-10' : 'bg-white border-b border-gray-100 shadow-md'} py-6 mb-8`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${
+      isLandingPage 
+        ? scrolled 
+          ? 'bg-white shadow-md py-4' 
+          : 'bg-transparent py-6'
+        : 'bg-white shadow-md py-4'
+    }`}>
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-12">
             <Link to="/" className="flex items-center">
-              <h1 className={`text-3xl font-serif font-bold ${isLandingPage ? 'text-white' : 'text-navy'} relative`}>
+              <h1 className={`text-3xl font-serif font-bold transition-colors duration-300 ${
+                isLandingPage && !scrolled ? 'text-white' : 'text-navy'
+              }`}>
                 Landed
-                <div className={`absolute bottom-0 left-0 w-full h-0.5 ${isLandingPage ? 'bg-white bg-opacity-20' : 'bg-navy bg-opacity-10'}`}></div>
               </h1>
             </Link>
             
             {user && (
               <div className="hidden md:flex space-x-8 items-center">
-                <Link to="/jobs" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
+                <Link to="/jobs" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Jobs
                 </Link>
-                <Link to="/interview-coach" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
+                <Link to="/interview-coach" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Interview Coach
                 </Link>
-                <Link to="/profile" className="elegant-link text-lg border-b-2 border-transparent hover:border-navy py-2">
+                <Link to="/profile" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Profile
                 </Link>
               </div>
@@ -52,13 +72,13 @@ const Navbar = ({ user }) => {
 
             {isLandingPage && (
               <div className="hidden md:flex space-x-8 items-center">
-                <a href="#features" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
+                <a href="#features" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Features
                 </a>
-                <a href="#testimonials" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
+                <a href="#testimonials" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Testimonials
                 </a>
-                <a href="#jobs" className="text-white hover:text-gray-200 transition duration-150 text-lg border-b-2 border-transparent hover:border-white py-2">
+                <a href="#jobs" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                   Jobs
                 </a>
               </div>
@@ -71,27 +91,27 @@ const Navbar = ({ user }) => {
               {user ? (
                 <button
                   onClick={handleLogout}
-                  className="elegant-link text-lg border-b-2 border-transparent hover:border-navy"
+                  className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}
                 >
                   Logout
                 </button>
               ) : (
-                <>
-                  <Link to="/login" className={`mr-6 ${isLandingPage ? 'text-white hover:text-gray-200 border-b-2 border-transparent hover:border-white' : 'elegant-link border-b-2 border-transparent hover:border-navy'} transition duration-150 text-lg`}>
+                <div className="flex items-center space-x-6">
+                  <Link to="/login" className={`nav-link ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}>
                     Log in
                   </Link>
                   <Link to="/register">
-                    <Button color={isLandingPage ? "secondary" : "primary"} size="lg">
+                    <Button color={isLandingPage && !scrolled ? "secondary" : "primary"} size="lg">
                       Sign up
                     </Button>
                   </Link>
-                </>
+                </div>
               )}
             </div>
             
             {/* Mobile menu button */}
             <button
-              className={`md:hidden flex items-center ${isLandingPage ? 'text-white' : 'text-navy'}`}
+              className={`md:hidden flex items-center ${isLandingPage && !scrolled ? 'text-white' : 'text-navy'}`}
               onClick={toggleMobileMenu}
             >
               <svg 
@@ -111,9 +131,13 @@ const Navbar = ({ user }) => {
           </div>
         </div>
         
-        {/* Mobile menu, show/hide based on menu state */}
+        {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className={`md:hidden py-4 ${isLandingPage ? 'bg-navy bg-opacity-90' : 'border-t border-gray-100'}`}>
+          <div className={`md:hidden mt-4 py-4 rounded-lg ${
+            isLandingPage && !scrolled 
+              ? 'bg-white bg-opacity-95' 
+              : 'bg-white shadow-lg'
+          }`}>
             {user ? (
               <>
                 <Link 
@@ -150,21 +174,21 @@ const Navbar = ({ user }) => {
                   <>
                     <a 
                       href="#features" 
-                      className="block py-2 px-4 text-white hover:bg-navy"
+                      className="block py-2 px-4 text-navy hover:bg-offwhite"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Features
                     </a>
                     <a 
                       href="#testimonials" 
-                      className="block py-2 px-4 text-white hover:bg-navy"
+                      className="block py-2 px-4 text-navy hover:bg-offwhite"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Testimonials
                     </a>
                     <a 
                       href="#jobs" 
-                      className="block py-2 px-4 text-white hover:bg-navy"
+                      className="block py-2 px-4 text-navy hover:bg-offwhite"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Jobs
@@ -173,14 +197,14 @@ const Navbar = ({ user }) => {
                 )}
                 <Link 
                   to="/login" 
-                  className={`block py-2 px-4 ${isLandingPage ? 'text-white hover:bg-navy' : 'text-navy hover:bg-offwhite'}`}
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Log in
                 </Link>
                 <Link 
                   to="/register" 
-                  className={`block py-2 px-4 ${isLandingPage ? 'text-white hover:bg-navy' : 'text-navy hover:bg-offwhite'}`}
+                  className="block py-2 px-4 text-navy hover:bg-offwhite"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign up

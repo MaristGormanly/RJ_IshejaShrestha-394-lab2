@@ -1,0 +1,33 @@
+.nav-link {
+  @apply text-xl font-medium transition-all duration-300 relative;
+}
+
+.nav-link::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300;
+}
+
+.nav-link:hover::after {
+  @apply w-full;
+}
+
+/* Landing page specific styles */
+.nav-link[href^="#"]::after {
+  @apply bg-white;
+}
+
+/* Regular page styles */
+.nav-link:not([href^="#"])::after {
+  @apply bg-navy;
+}
+
+/* Mobile menu styles */
+@media (max-width: 768px) {
+  .nav-link {
+    @apply text-lg;
+  }
+  
+  .nav-link::after {
+    @apply hidden;
+  }
+} 
