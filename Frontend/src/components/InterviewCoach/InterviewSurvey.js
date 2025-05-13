@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../Button';
+import VoiceSelector from './VoiceSelector';
 
 const InterviewSurvey = ({ initialData, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const InterviewSurvey = ({ initialData, onSubmit }) => {
     preferences: {
       interviewDuration: 15,
       questionDifficulty: 'medium',
+      voicePreference: null,
     }
   });
   const [customSkill, setCustomSkill] = useState('');
@@ -113,6 +115,17 @@ const InterviewSurvey = ({ initialData, onSubmit }) => {
     if (validateForm()) {
       onSubmit(formData);
     }
+  };
+
+  // Handle voice selection change
+  const handleVoiceChange = (voiceURI) => {
+    setFormData(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        voicePreference: voiceURI
+      }
+    }));
   };
 
   return (
@@ -297,6 +310,17 @@ const InterviewSurvey = ({ initialData, onSubmit }) => {
                 <option value="mixed">Mixed Difficulty</option>
               </select>
             </div>
+          </div>
+          
+          {/* Voice Selection */}
+          <div className="mt-6">
+            <label className="block text-gray-700 mb-2">
+              Interviewer Voice
+            </label>
+            <VoiceSelector 
+              selectedVoice={formData.preferences.voicePreference}
+              onChange={handleVoiceChange}
+            />
           </div>
         </div>
         

@@ -20,6 +20,7 @@ const InterviewCoach = () => {
     preferences: {
       interviewDuration: 15,
       questionDifficulty: 'medium',
+      voicePreference: null,
     }
   });
   const [interviewSession, setInterviewSession] = useState(null);
@@ -62,7 +63,19 @@ const InterviewCoach = () => {
     
     try {
       const prefDocRef = doc(db, 'userInterviewPreferences', auth.currentUser.uid);
-      await setDoc(prefDocRef, interviewData, { merge: true });
+      // Make sure the entire interviewData object is saved including voice preference
+      await setDoc(prefDocRef, {
+        jobTitle: interviewData.jobTitle,
+        industry: interviewData.industry,
+        experienceLevel: interviewData.experienceLevel,
+        interviewType: interviewData.interviewType,
+        targetSkills: interviewData.targetSkills,
+        preferences: {
+          interviewDuration: interviewData.preferences.interviewDuration,
+          questionDifficulty: interviewData.preferences.questionDifficulty,
+          voicePreference: interviewData.preferences.voicePreference,
+        }
+      }, { merge: true });
     } catch (error) {
       console.error('Error saving interview preferences:', error);
     }

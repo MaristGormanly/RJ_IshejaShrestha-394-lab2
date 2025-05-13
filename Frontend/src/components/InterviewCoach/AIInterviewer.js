@@ -25,6 +25,14 @@ const AIInterviewer = ({ interviewData, onComplete }) => {
   const [interviewStartTime, setInterviewStartTime] = useState(null);
   const [interviewEndTime, setInterviewEndTime] = useState(null);
   
+  // Voice settings
+  const [voiceSettings, setVoiceSettings] = useState({
+    pitch: 1.0,
+    rate: 1.0,
+    volume: 1.0
+  });
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  
   const recognitionRef = useRef(null);
   const audioContextRef = useRef(null);
   
@@ -447,6 +455,59 @@ Format your response as a JSON object with a "questions" array. Each question sh
     speakQuestion(currentQuestion.question);
   };
 
+  // Handle voice setting changes
+  const handleVoiceSettingChange = (e) => {
+    const { name, value } = e.target;
+    setVoiceSettings(prev => ({
+      ...prev,
+      [name]: parseFloat(value)
+    }));
+  };
+
+  // Preview current voice settings
+  const previewVoiceSettings = () => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance("This is how my voice will sound during the interview.");
+    
+    // Set voice based on user preference or fallback to default
+    const selectedVoice = findBestVoiceMatch();
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    
+    // Apply current settings
+    utterance.pitch = voiceSettings.pitch;
+    utterance.rate = voiceSettings.rate;
+    utterance.volume = voiceSettings.volume;
+    
+    synth.speak(utterance);
+  };
+
+  // Find the best voice match based on user preference
+  const findBestVoiceMatch = () => {
+    const voices = window.speechSynthesis.getVoices();
+    let selectedVoice = null;
+
+    // First try to use the user's preferred voice if set
+    if (interviewData.preferences.voicePreference) {
+      selectedVoice = voices.find(voice => voice.voiceURI === interviewData.preferences.voicePreference);
+    }
+    
+    // If no voice preference or preferred voice not found, fallback to default en-US voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(voice => voice.lang === 'en-US');
+    }
+    
+    // If still no voice found, try en-GB or just use the first English voice
+    if (!selectedVoice) {
+      selectedVoice = voices.find(voice => voice.lang === 'en-GB') || 
+                     voices.find(voice => voice.lang.startsWith('en')) ||
+                     voices[0]; // Last resort fallback
+    }
+    
+    return selectedVoice;
+  };
+
   const speakQuestion = async (text) => {
     setAvatar(prev => ({ ...prev, speaking: true, expression: 'neutral' }));
     
@@ -454,12 +515,16 @@ Format your response as a JSON object with a "questions" array. Each question sh
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Set voice (optional)
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => voice.lang === 'en-US');
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
+      // Set voice based on user preference or fallback to default
+      const selectedVoice = findBestVoiceMatch();
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
+      
+      // Apply current voice settings
+      utterance.rate = voiceSettings.rate;
+      utterance.pitch = voiceSettings.pitch;
+      utterance.volume = voiceSettings.volume;
       
       utterance.onend = () => {
         setAvatar(prev => ({ ...prev, speaking: false }));
@@ -1082,6 +1147,94 @@ Return a JSON object with these fields:
               <li><span className="font-medium">Duration:</span> ~{interviewData.preferences.interviewDuration} minutes</li>
             </ul>
           </div>
+          
+          {/* Voice settings toggle */}
+          <div className="mb-4">
+            <button
+              onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+              className="text-navy hover:text-primary flex items-center mx-auto"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Voice Settings
+            </button>
+          </div>
+          
+          {/* Voice settings panel */}
+          {showVoiceSettings && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg max-w-md mx-auto">
+              <h4 className="font-semibold text-navy mb-3">Adjust Voice Settings</h4>
+              
+              <div className="mb-3">
+                <label className="flex justify-between text-sm text-gray-600">
+                  <span>Pitch: {voiceSettings.pitch.toFixed(1)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  name="pitch"
+                  min="0.5" 
+                  max="2" 
+                  step="0.1"
+                  value={voiceSettings.pitch}
+                  onChange={handleVoiceSettingChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Lower</span>
+                  <span>Higher</span>
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <label className="flex justify-between text-sm text-gray-600">
+                  <span>Speed: {voiceSettings.rate.toFixed(1)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  name="rate"
+                  min="0.5" 
+                  max="2" 
+                  step="0.1"
+                  value={voiceSettings.rate}
+                  onChange={handleVoiceSettingChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Slower</span>
+                  <span>Faster</span>
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <label className="flex justify-between text-sm text-gray-600">
+                  <span>Volume: {voiceSettings.volume.toFixed(1)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  name="volume"
+                  min="0" 
+                  max="1" 
+                  step="0.1"
+                  value={voiceSettings.volume}
+                  onChange={handleVoiceSettingChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Quieter</span>
+                  <span>Louder</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={previewVoiceSettings}
+                className="w-full mt-2 px-4 py-2 bg-navy text-white text-sm rounded-md hover:bg-opacity-90"
+              >
+                Preview Voice
+              </button>
+            </div>
+          )}
           
           <Button color="primary" onClick={startInterview}>
             Start Interview
