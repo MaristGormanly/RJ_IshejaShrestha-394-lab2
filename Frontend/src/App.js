@@ -70,27 +70,6 @@ function App() {
           <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
         </Routes>
       </div>
-      {isLandingPage ? (
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-        </Routes>
-      ) : (
-        <div className="container mx-auto px-4 page-container">
-          <Routes>
-            <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-            <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-            <Route path="/" element={user ? <AuthRoute user={user}><Dashboard /></AuthRoute> : <Navigate to="/login" />} />
-            <Route path="/cover-letter" element={<AuthRoute user={user}><CoverLetterGenerator /></AuthRoute>} />
-            <Route path="/resume-tailoring" element={<AuthRoute user={user}><ResumeTailoring /></AuthRoute>} />
-            <Route path="/jobs" element={<AuthRoute user={user}><Jobs /></AuthRoute>} />
-            <Route path="/profile" element={<AuthRoute user={user}><Profile /></AuthRoute>} />
-            <Route path="/ai-resume" element={<AuthRoute user={user}><AIResumeGenerator /></AuthRoute>} />
-            <Route path="/ai-cover-letter" element={<AuthRoute user={user}><AICoverLetterGenerator /></AuthRoute>} />
-            <Route path="/interview-coach" element={<AuthRoute user={user}><InterviewCoach /></AuthRoute>} />
-            <Route path="/interview-history" element={<AuthRoute user={user}><InterviewHistory /></AuthRoute>} />
-          </Routes>
-        </div>
-      )}
     </div>
   );
 }
