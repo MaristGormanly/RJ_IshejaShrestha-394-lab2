@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase/config';
+import { getApiUrl } from '../services/api';
 
 const HomeJobSearch = () => {
   const [jobs, setJobs] = useState([]);
@@ -14,7 +15,6 @@ const HomeJobSearch = () => {
   const [savingJobs, setSavingJobs] = useState({});
   
   const navigate = useNavigate();
-  const BACKEND_URL = 'http://localhost:5000';
 
   // Fetch random featured jobs when component mounts
   useEffect(() => {
@@ -29,8 +29,9 @@ const HomeJobSearch = () => {
     try {
       // Use a default search term to get some initial jobs
       const defaultSearch = 'software developer';
-      const apiUrl = `${BACKEND_URL}/api/jobs?what=${defaultSearch}&results_per_page=5`;
+      const apiUrl = getApiUrl(`/api/jobs?what=${defaultSearch}&results_per_page=5`);
       
+      console.log('Fetching jobs from:', apiUrl);
       const response = await axios.get(apiUrl);
       
       if (response.data && response.data.results) {
@@ -40,7 +41,49 @@ const HomeJobSearch = () => {
       }
     } catch (err) {
       console.error('Error fetching featured jobs:', err);
-      setError('Failed to load job listings. Please try again later.');
+      
+      // More detailed error message
+      let errorMessage = 'Failed to load job listings. Please try again later.';
+      
+      if (err.response) {
+        // Server responded with an error status
+        if (err.response.data && err.response.data.message) {
+          errorMessage = `Error: ${err.response.data.message}`;
+        } else {
+          errorMessage = `Server error (${err.response.status}): ${err.response.statusText || 'Unknown error'}`;
+        }
+      } else if (err.request) {
+        // Request was made but no response received (network issue)
+        errorMessage = 'Network error: Unable to connect to job search server.';
+      }
+      
+      setError(errorMessage);
+      
+      // Provide mock data in case of error for better user experience
+      setJobs([
+        {
+          id: "fallback-job-1",
+          title: "Software Developer",
+          description: "This is a placeholder job while we're having trouble connecting to our job search API.",
+          created: new Date().toISOString(),
+          company: { display_name: "Demo Company Inc." },
+          location: { display_name: "San Francisco, CA" },
+          salary_min: 80000,
+          salary_max: 120000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/software-developer"
+        },
+        {
+          id: "fallback-job-2",
+          title: "Frontend Engineer",
+          description: "This is a placeholder job while we're having trouble connecting to our job search API.",
+          created: new Date().toISOString(),
+          company: { display_name: "Tech Solutions LLC" },
+          location: { display_name: "Remote" },
+          redirect_url: "https://example.com/job/frontend-engineer"
+        }
+      ]);
     } finally {
       setLoading(false);
     }
@@ -61,8 +104,9 @@ const HomeJobSearch = () => {
     try {
       const encodedWhat = encodeURIComponent(searchTerm);
       const encodedWhere = encodeURIComponent(location);
-      const apiUrl = `${BACKEND_URL}/api/jobs?what=${encodedWhat}&where=${encodedWhere}&results_per_page=5`;
+      const apiUrl = getApiUrl(`/api/jobs?what=${encodedWhat}&where=${encodedWhere}&results_per_page=5`);
       
+      console.log('Searching jobs from:', apiUrl);
       const response = await axios.get(apiUrl);
       
       if (response.data && response.data.results && response.data.results.length > 0) {
@@ -73,7 +117,23 @@ const HomeJobSearch = () => {
       }
     } catch (err) {
       console.error('Error searching jobs:', err);
-      setError('Failed to search for jobs. Please try again later.');
+      
+      // More detailed error message
+      let errorMessage = 'Failed to search for jobs. Please try again later.';
+      
+      if (err.response) {
+        // Server responded with an error status
+        if (err.response.data && err.response.data.message) {
+          errorMessage = `Error: ${err.response.data.message}`;
+        } else {
+          errorMessage = `Server error (${err.response.status}): ${err.response.statusText || 'Unknown error'}`;
+        }
+      } else if (err.request) {
+        // Request was made but no response received (network issue)
+        errorMessage = 'Network error: Unable to connect to job search server.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsSearching(false);
     }

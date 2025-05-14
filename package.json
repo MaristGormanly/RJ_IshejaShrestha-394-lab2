@@ -1,0 +1,21 @@
+{
+  "name": "covercraft-root",
+  "version": "1.0.0",
+  "description": "Root package for Firebase deployment",
+  "private": true,
+  "scripts": {
+    "deploy": "firebase deploy",
+    "build:frontend": "cd Frontend && npm run build",
+    "predeploy": "npm run build:frontend",
+    "backend:install": "cd Backend && npm install",
+    "frontend:install": "cd Frontend && npm install",
+    "install-all": "npm run backend:install && npm run frontend:install",
+    "backend:start": "cd Backend && npm run dev",
+    "frontend:start": "cd Frontend && npm start",
+    "backend:deploy": "cd Backend && npm run deploy:functions",
+    "frontend:deploy": "cd Frontend && npm run build && firebase deploy --only hosting"
+  },
+  "engines": {
+    "node": "16"
+  }
+} 

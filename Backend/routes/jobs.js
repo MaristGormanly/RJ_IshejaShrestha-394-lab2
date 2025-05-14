@@ -1,85 +1,101 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
 
-// Get environment variables
-const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID;
-const ADZUNA_API_KEY = process.env.ADZUNA_API_KEY;
-
-// Simple route for testing
+// Simple test route
 router.get('/test', (req, res) => {
   res.json({ message: 'Jobs API is working!' });
 });
 
 /**
  * @route   GET /api/jobs
- * @desc    Search for jobs using the Adzuna API
+ * @desc    Search for jobs - currently returns mock data
  * @access  Public
  */
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
+    console.log('Jobs route hit! Query:', req.query);
+    
     // Get parameters from request
-    const { what, where, page = 1, results_per_page = 10 } = req.query;
+    const { what, where } = req.query;
+    console.log(`Job search request: what=${what}, where=${where}`);
     
-    if (!what && !where) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please provide at least one search parameter (what or where)' 
-      });
-    }
-    
-    // Log request info
-    console.log(`Job search request: what=${what}, where=${where}, page=${page}`);
-    
-    // API URL
-    const baseUrl = 'https://api.adzuna.com/v1/api/jobs/us/search/' + page;
-    
-    // Build query parameters
-    const queryParams = new URLSearchParams({
-      app_id: ADZUNA_APP_ID,
-      app_key: ADZUNA_API_KEY,
-      results_per_page
+    // Return mock data
+    return res.json({
+      count: 5,
+      results: [
+        {
+          id: "mock-job-1",
+          title: "Software Developer",
+          description: "This is a mock job description for a software developer position. We are looking for experienced developers to join our team.",
+          created: new Date().toISOString(),
+          company: { display_name: "Demo Company Inc." },
+          location: { display_name: "San Francisco, CA" },
+          salary_min: 80000,
+          salary_max: 120000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/software-developer"
+        },
+        {
+          id: "mock-job-2",
+          title: "Frontend Engineer",
+          description: "Join our team as a Frontend Engineer. Experience with React, Vue, or Angular required. Remote work available.",
+          created: new Date().toISOString(),
+          company: { display_name: "Tech Solutions LLC" },
+          location: { display_name: "Remote" },
+          salary_min: 90000,
+          salary_max: 130000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/frontend-engineer"
+        },
+        {
+          id: "mock-job-3",
+          title: "Data Scientist",
+          description: "Looking for a data scientist with experience in machine learning and statistical analysis.",
+          created: new Date().toISOString(),
+          company: { display_name: "Data Analytics Corp" },
+          location: { display_name: "New York, NY" },
+          salary_min: 95000,
+          salary_max: 145000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/data-scientist"
+        },
+        {
+          id: "mock-job-4",
+          title: "DevOps Engineer",
+          description: "Seeking a DevOps engineer to help us streamline our deployment processes and manage cloud infrastructure.",
+          created: new Date().toISOString(),
+          company: { display_name: "Cloud Systems Inc." },
+          location: { display_name: "Austin, TX" },
+          salary_min: 85000,
+          salary_max: 125000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/devops-engineer"
+        },
+        {
+          id: "mock-job-5",
+          title: "UI/UX Designer",
+          description: "Join our creative team as a UI/UX designer. Create beautiful and functional interfaces for our products.",
+          created: new Date().toISOString(),
+          company: { display_name: "Creative Designs Co." },
+          location: { display_name: "Seattle, WA" },
+          salary_min: 75000,
+          salary_max: 115000,
+          salary_is_predicted: true,
+          contract_time: "full_time",
+          redirect_url: "https://example.com/job/uiux-designer"
+        }
+      ]
     });
-    
-    // Add optional parameters
-    if (what) queryParams.append('what', what);
-    if (where) queryParams.append('where', where);
-    
-    const apiUrl = `${baseUrl}?${queryParams.toString()}`;
-    console.log('Calling API:', apiUrl);
-    
-    // Make the API call
-    const response = await axios.get(apiUrl);
-    
-    // Verify we got a successful response with data
-    if (!response.data) {
-      throw new Error('Empty response from API');
-    }
-    
-    // Log success info
-    console.log(`API Success! Found ${response.data.results?.length || 0} jobs`);
-    
-    // Send response back to client
-    return res.json(response.data);
-    
   } catch (error) {
-    console.error('Error fetching jobs:', error.message);
-    
-    // Handle different error types
-    if (error.response) {
-      // The API returned an error response
-      console.error('API error status:', error.response.status);
-      return res.status(error.response.status).json({
-        success: false,
-        message: 'API Error: ' + error.message
-      });
-    } else {
-      // General error
-      return res.status(500).json({
-        success: false,
-        message: 'Server error: ' + error.message
-      });
-    }
+    console.error('Error in jobs route:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error - mock data unavailable'
+    });
   }
 });
 

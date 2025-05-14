@@ -18,11 +18,15 @@ module.exports = function (app) {
     })
   );
 
-  app.use(
-    '/api',
-    createProxyMiddleware({
-      target: 'http://localhost:5000',
-      changeOrigin: true,
-    })
-  );
+  // This proxy middleware is only used in development
+  // In production with Firebase, the API requests are handled by the rewrite rules in firebase.json
+  if (process.env.NODE_ENV !== 'production') {
+    app.use(
+      '/api',
+      createProxyMiddleware({
+        target: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+        changeOrigin: true,
+      })
+    );
+  }
 }; 

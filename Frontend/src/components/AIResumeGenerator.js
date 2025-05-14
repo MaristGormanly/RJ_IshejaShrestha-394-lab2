@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '../services/api';
 
 const AIResumeGenerator = ({ currentUser }) => {
   const [resumes, setResumes] = useState([]);
@@ -17,7 +18,7 @@ const AIResumeGenerator = ({ currentUser }) => {
 
   const fetchResumes = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/resumes', {
+      const response = await fetch(getApiUrl('/api/resumes'), {
         headers: {
           'Authorization': `Bearer ${currentUser.token}`
         }
@@ -39,7 +40,7 @@ const AIResumeGenerator = ({ currentUser }) => {
   const handleResumeSelect = async (resumeId) => {
     try {
       setSelectedResumeId(resumeId);
-      const response = await fetch(`http://localhost:5000/api/resumes/${resumeId}/content`, {
+      const response = await fetch(getApiUrl(`/api/resumes/${resumeId}/content`), {
         headers: {
           'Authorization': `Bearer ${currentUser.token}`
         }
@@ -68,7 +69,7 @@ const AIResumeGenerator = ({ currentUser }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/generate', {
+      const response = await fetch(getApiUrl('/api/generate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

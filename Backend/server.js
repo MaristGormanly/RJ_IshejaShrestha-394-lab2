@@ -30,9 +30,39 @@ dotenv.config();
 
 const app = express();
 
+// Detect if we're running in Firebase Functions
+const isFirebaseFunctions = process.env.FUNCTION_TARGET === 'api' || 
+                          process.env.K_SERVICE === 'api' ||
+                          process.env.FIREBASE_CONFIG !== undefined;
+console.log('Running in Firebase Functions environment:', isFirebaseFunctions);
+
+// Base path for API routes - empty in Firebase Functions, '/api' otherwise
+const API_BASE_PATH = isFirebaseFunctions ? '' : '/api';
+
+// Get allowed origins from environment or use a default for development
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:3000', 'https://landed-41df2.web.app', 'https://landed-41df2.firebaseapp.com'];
+
 // Configure CORS for all routes
 app.use(cors({
-  origin: '*', // In production, change this to your specific domain
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      // For production, allow all origins by default
+      if (process.env.NODE_ENV === 'production') {
+        return callback(null, true);
+      }
+      
+      // If the origin isn't in the list of allowed origins
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
@@ -45,11 +75,6 @@ app.use(express.json());
 
 // Add headers middleware
 app.use((req, res, next) => {
-  // Set CORS headers manually as a fallback
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-  
   // Log all requests
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   
@@ -62,7 +87,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api/jobs', jobsRoutes);
+app.use(`${API_BASE_PATH}/jobs`, jobsRoutes);
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -101,7 +126,7 @@ const upload = multer({
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Create or update user profile
-app.post('/api/profiles', async (req, res) => {
+app.post(`${API_BASE_PATH}/profiles`, async (req, res) => {
   try {
     const { userId, email, name } = req.body;
     
@@ -123,7 +148,7 @@ app.post('/api/profiles', async (req, res) => {
 });
 
 // Get user profile
-app.get('/api/profiles/:userId', async (req, res) => {
+app.get(`${API_BASE_PATH}/profiles/:userId`, async (req, res) => {
   try {
     const { userId } = req.params;
     const query = 'SELECT * FROM users WHERE id = $1';
@@ -141,7 +166,7 @@ app.get('/api/profiles/:userId', async (req, res) => {
 });
 
 // Upload profile document
-app.post('/api/profiles/:userId/documents', upload.single('file'), async (req, res) => {
+app.post(`${API_BASE_PATH}/profiles/:userId/documents`, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -196,7 +221,7 @@ app.post('/api/profiles/:userId/documents', upload.single('file'), async (req, r
 });
 
 // Get profile documents
-app.get('/api/profiles/:userId/documents', async (req, res) => {
+app.get(`${API_BASE_PATH}/profiles/:userId/documents`, async (req, res) => {
   try {
     const { userId } = req.params;
     const query = `
@@ -219,7 +244,7 @@ app.get('/api/profiles/:userId/documents', async (req, res) => {
 });
 
 // Delete profile document
-app.delete('/api/profiles/:userId/documents/:documentId', async (req, res) => {
+app.delete(`${API_BASE_PATH}/profiles/:userId/documents/:documentId`, async (req, res) => {
   try {
     const { userId, documentId } = req.params;
     
@@ -249,7 +274,7 @@ app.delete('/api/profiles/:userId/documents/:documentId', async (req, res) => {
 });
 
 // File upload endpoint
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+app.post(`${API_BASE_PATH}/upload`, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -299,7 +324,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 });
 
 // Get user's documents
-app.get('/api/documents/:userId', async (req, res) => {
+app.get(`${API_BASE_PATH}/documents/:userId`, async (req, res) => {
   try {
     const { userId } = req.params;
     const query = 'SELECT * FROM documents WHERE user_id = $1 ORDER BY created_at DESC';
@@ -318,7 +343,7 @@ app.get('/api/documents/:userId', async (req, res) => {
 });
 
 // Download file endpoint
-app.get('/api/download/:filename', async (req, res) => {
+app.get(`${API_BASE_PATH}/download/:filename`, async (req, res) => {
   try {
     const { filename } = req.params;
     const filepath = path.join(__dirname, 'uploads', filename);
@@ -335,7 +360,7 @@ app.get('/api/download/:filename', async (req, res) => {
 });
 
 // Delete document endpoint
-app.delete('/api/documents/:documentId', async (req, res) => {
+app.delete(`${API_BASE_PATH}/documents/:documentId`, async (req, res) => {
   try {
     const { documentId } = req.params;
     
@@ -365,7 +390,7 @@ app.delete('/api/documents/:documentId', async (req, res) => {
 });
 
 // Get resume content
-app.get('/api/resumes/:resumeId/content', async (req, res) => {
+app.get(`${API_BASE_PATH}/resumes/:resumeId/content`, async (req, res) => {
   try {
     const { resumeId } = req.params;
     
@@ -392,7 +417,7 @@ app.get('/api/resumes/:resumeId/content', async (req, res) => {
 });
 
 // Get all resumes for a user
-app.get('/api/resumes', async (req, res) => {
+app.get(`${API_BASE_PATH}/resumes`, async (req, res) => {
   try {
     // Get user ID from auth token
     const userId = req.headers.authorization.split(' ')[1]; // In production, properly decode JWT
@@ -413,7 +438,7 @@ app.get('/api/resumes', async (req, res) => {
 });
 
 // Get total user count
-app.get('/api/users/count', async (req, res) => {
+app.get(`${API_BASE_PATH}/users/count`, async (req, res) => {
   try {
     if (!firebaseInitialized) {
       return res.status(500).json({ error: 'Firebase Admin SDK not initialized' });
@@ -439,7 +464,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-}); 
+// Export the app instead of starting the server
+module.exports = app; 

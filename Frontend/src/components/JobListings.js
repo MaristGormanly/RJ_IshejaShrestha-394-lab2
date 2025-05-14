@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import axios from 'axios';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { getApiUrl } from '../services/api';
 
 const JobListings = () => {
   const [jobs, setJobs] = useState([]);
@@ -13,9 +14,6 @@ const JobListings = () => {
   const [hasMore, setHasMore] = useState(true);
   const [testResult, setTestResult] = useState('');
 
-  // Backend API URL
-  const BACKEND_URL = 'http://localhost:5000';
-
   // Test function to check if backend is reachable
   const testBackendConnection = async () => {
     try {
@@ -23,14 +21,14 @@ const JobListings = () => {
       setError(null);
       setTestResult('Testing connection...');
       
-      const response = await axios.get(`${BACKEND_URL}/api/jobs/test`);
+      const response = await axios.get(getApiUrl('/api/jobs/test'));
       console.log('Test response:', response.data);
       
       setTestResult(`Connection successful! Server says: ${response.data.message}`);
     } catch (err) {
       console.error('Test connection error:', err);
       setTestResult(`Connection failed: ${err.message}`);
-      setError(`Cannot connect to backend at ${BACKEND_URL}. Is the server running?`);
+      setError(`Cannot connect to backend. Is the server running?`);
     } finally {
       setLoading(false);
     }
@@ -45,7 +43,7 @@ const JobListings = () => {
       // Build the API URL with proper encoding of parameters
       const encodedWhat = encodeURIComponent(searchTerm);
       const encodedWhere = encodeURIComponent(location);
-      const apiUrl = `${BACKEND_URL}/api/jobs?what=${encodedWhat}&where=${encodedWhere}&page=${page}`;
+      const apiUrl = getApiUrl(`/api/jobs?what=${encodedWhat}&where=${encodedWhere}&page=${page}`);
       
       console.log(`Fetching jobs from: ${apiUrl}`);
       

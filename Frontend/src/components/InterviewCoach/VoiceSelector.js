@@ -6,21 +6,49 @@ const VoiceSelector = ({ selectedVoice, onChange, className }) => {
 
   // Load available voices
   useEffect(() => {
+    let voicesLoaded = false;
+    
     const loadVoices = () => {
-      const synth = window.speechSynthesis;
-      const voices = synth.getVoices();
+      // Force initialization of the speech synthesis
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
       
-      if (voices.length > 0) {
+      const synth = window.speechSynthesis;
+      let voices = synth.getVoices();
+      
+      // In some browsers, getVoices() might return an empty array on first call
+      if (voices.length === 0) {
+        setTimeout(() => {
+          voices = synth.getVoices();
+          if (voices.length > 0) {
+            setAvailableVoices(voices);
+            setVoiceLoading(false);
+            voicesLoaded = true;
+          }
+        }, 100);
+        return;
+      }
+      
+      if (voices.length > 0 && !voicesLoaded) {
         setAvailableVoices(voices);
         setVoiceLoading(false);
+        voicesLoaded = true;
+        
+        // Log available voices for debugging
+        console.log('Loaded voices:', voices.map(v => `${v.name} (${v.lang})`));
       }
     };
     
+    // Call immediately to attempt first load
     loadVoices();
     
     // The voiceschanged event is fired when the list of voices is populated or changes
-    if ('onvoiceschanged' in speechSynthesis) {
-      speechSynthesis.onvoiceschanged = loadVoices;
+    if ('onvoiceschanged' in window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    } else {
+      // For browsers that don't reliably fire the voiceschanged event
+      setTimeout(loadVoices, 500);
     }
     
     return () => {
@@ -143,6 +171,12 @@ const VoiceSelector = ({ selectedVoice, onChange, className }) => {
       ) : (
         <p className="text-sm text-gray-500 mt-1">
           Select a voice for your interviewer and click Preview to hear it
+          {availableVoices.length < 5 && (
+            <>
+              <br />
+              <span className="italic text-xs">Note: Different browsers and devices may have different voice options available</span>
+            </>
+          )}
         </p>
       )}
     </div>

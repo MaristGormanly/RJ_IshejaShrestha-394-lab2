@@ -5,6 +5,7 @@ import axios from 'axios';
 import LandingAnimation from '../components/LandingAnimation';
 import useScrollAnimation from '../hooks/useScrollAnimation';
 import '../components/ScrollAnimation.css';
+import { getApiUrl } from '../services/api';
 
 const LandingPage = () => {
   const [userCount, setUserCount] = useState(null);
@@ -16,7 +17,7 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchUserCount = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/stats/users');
+        const response = await axios.get(getApiUrl('/api/stats/users'));
         setUserCount(response.data.userCount);
       } catch (error) {
         console.error('Error fetching user count:', error);

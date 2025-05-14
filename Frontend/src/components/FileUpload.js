@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext'; // Assuming you have an auth context
+import { getApiUrl } from '../services/api';
 
 const FileUpload = ({ onUploadSuccess, onUploadError, title, type }) => {
   const [file, setFile] = useState(null);
@@ -34,7 +35,7 @@ const FileUpload = ({ onUploadSuccess, onUploadError, title, type }) => {
     formData.append('type', type || 'resume');
 
     try {
-      const response = await fetch('http://localhost:5000/api/upload', {
+      const response = await fetch(getApiUrl('/api/upload'), {
         method: 'POST',
         body: formData,
         credentials: 'include', // Include credentials for CORS
