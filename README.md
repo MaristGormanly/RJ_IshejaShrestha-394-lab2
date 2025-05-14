@@ -1,6 +1,6 @@
-# CoverCraft - AI-Powered Resume & Cover Letter Tool
+# Landed - AI-Powered Resume & Cover Letter Tool
 
-CoverCraft is a modern web application that helps job seekers create tailored resumes and cover letters using AI to match job descriptions and improve their chances of landing interviews.
+Landed is a modern web application that helps job seekers create tailored resumes and cover letters using AI to match job descriptions and improve their chances of landing interviews.
 
 ## Features
 
