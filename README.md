@@ -1,6 +1,6 @@
-# CoverCraft - Resume & Cover Letter Tool
+# Landed - Resume & Cover Letter Tool
 
-CoverCraft is a modern web application that helps job seekers create tailored resumes and cover letters using AI to match job descriptions.
+Landed is a modern web application that helps job seekers create tailored resumes and cover letters using AI to match job descriptions.
 
 ## Features
 
